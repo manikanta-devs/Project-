@@ -133,7 +133,10 @@
     }
 
     function sanitizeUrl(url) {
-        // Decode HTML entities for protocol validation only
+        // The url parameter is HTML-entity-encoded (from escapeHtml).
+        // We decode entities here ONLY to inspect the true protocol.
+        // The decoded value is never used in output — we return the
+        // original HTML-safe string so it can be placed in an attribute.
         var decoded = url;
         decoded = decoded.replace(/&amp;/g, '&');
         decoded = decoded.replace(/&lt;/g, '<');
