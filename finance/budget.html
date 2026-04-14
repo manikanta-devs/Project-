@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Budgets – FinTrack</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>💰 FinTrack</h1>
+      <p>Personal Finance Tracker</p>
+    </div>
+    <nav>
+      <a href="index.html"        class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="transactions.html" class="nav-item"><span class="nav-icon">💳</span> Transactions</a>
+      <a href="budget.html"       class="nav-item active"><span class="nav-icon">🎯</span> Budgets</a>
+    </nav>
+    <div class="sidebar-footer">FinTrack v1.0 &copy; 2026</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div style="font-size:1.15rem;font-weight:700;">Budget Goals</div>
+        <div class="page-subtitle" id="month-label">—</div>
+      </div>
+      <div class="topbar-right">
+        <input type="month" class="month-picker" id="month-picker"/>
+        <button class="btn btn-primary" onclick="openAddBudgetModal()">➕ Set Budget</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Overview cards -->
+      <div class="summary-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px;">
+        <div class="summary-card sc-balance">
+          <div class="summary-icon">🎯</div>
+          <div class="summary-info">
+            <div class="label">Total Budgeted</div>
+            <div class="value text-primary" id="b-total">—</div>
+          </div>
+        </div>
+        <div class="summary-card sc-expense">
+          <div class="summary-icon">💸</div>
+          <div class="summary-info">
+            <div class="label">Total Spent</div>
+            <div class="value text-danger" id="b-spent">—</div>
+          </div>
+        </div>
+        <div class="summary-card sc-savings">
+          <div class="summary-icon">✅</div>
+          <div class="summary-info">
+            <div class="label">Overall Usage</div>
+            <div class="value text-warning" id="b-pct">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Budget list -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📋 Category Budgets</span>
+          <span id="budget-info" style="font-size:0.82rem;color:var(--text-3);"></span>
+        </div>
+        <div id="budget-list-container">
+          <div class="empty-state">
+            <div class="empty-icon">🎯</div>
+            <h3>No budgets set</h3>
+            <p>Set a budget for each spending category to track your limits.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unbudgeted categories -->
+      <div class="card" id="unbudgeted-card" style="display:none;margin-top:20px;">
+        <div class="card-header">
+          <span class="card-title">📌 Unbudgeted Spending</span>
+          <span style="font-size:0.82rem;color:var(--text-3);">Categories with spending but no budget set</span>
+        </div>
+        <div id="unbudgeted-list"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT BUDGET MODAL -->
+<div class="modal-backdrop" id="budget-modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="bmodal-title">Set Budget</h3>
+      <button class="btn btn-outline btn-sm btn-icon" onclick="closeBudgetModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Category</label>
+        <select id="b-category"></select>
+      </div>
+      <div class="form-group">
+        <label>Budget Amount (₹)</label>
+        <input type="number" id="b-amount" placeholder="e.g. 5000" min="1" step="1"/>
+      </div>
+      <p style="font-size:0.82rem;color:var(--text-2);margin-top:4px;">
+        💡 Set the maximum amount you plan to spend in this category this month.
+      </p>
+      <p id="bmodal-error" style="color:var(--danger);font-size:0.83rem;display:none;margin-top:8px;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeBudgetModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBudget()">Save Budget</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-backdrop" id="del-modal" style="display:none;">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-header">
+      <h3>Remove Budget</h3>
+      <button class="btn btn-outline btn-sm btn-icon" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.92rem;color:var(--text-2);">Remove the budget for <strong id="del-cat-name"></strong>? This won't affect your transactions.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeleteBudget()">Remove</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="app.js"></script>
+<script src="budget.js"></script>
+</body>
+</html>

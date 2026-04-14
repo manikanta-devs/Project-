@@ -1,4 +1,46 @@
-# 🎓 QuizMaster – Online MCQ Exam System
+# 🚀 Academic Projects Portfolio
+
+Two complete, product-level projects — built with pure HTML, CSS and JavaScript (no backend, no frameworks).
+
+---
+
+## Project 1 — 💰 FinTrack: Personal Finance Tracker
+
+> **Folder:** `finance/`  |  Open `finance/index.html` to launch
+
+A full-featured personal finance management app with dashboard, transaction management, and budget tracking.
+
+### Features
+| Feature | Details |
+|---|---|
+| 📊 Dashboard | Summary cards, 6-month trend bar chart, expense doughnut chart |
+| 💳 Transactions | Full CRUD — add, edit, delete; search & filter by type/category/date/amount |
+| 🎯 Budgets | Set monthly category budgets, colour-coded progress bars, over-limit alerts |
+| 📌 Smart Defaults | Demo data seeded on first launch so the app looks populated immediately |
+| 💾 Persistence | All data stored in browser `localStorage` — survives page refresh |
+| 📱 Responsive | Sidebar layout collapses on mobile |
+
+### Tech Stack
+- HTML5 · CSS3 (custom properties, Flexbox, Grid)
+- Vanilla JavaScript ES6 (module pattern)
+- [Chart.js 4](https://www.chartjs.org/) — bar & doughnut charts via CDN
+
+### File Structure
+```
+finance/
+├── index.html        ← Dashboard
+├── transactions.html ← Transaction list
+├── budget.html       ← Budget goals
+├── style.css         ← Design system
+├── app.js            ← Data layer (localStorage CRUD)
+├── dashboard.js      ← Dashboard logic + Chart.js
+├── transactions.js   ← Transactions page logic
+└── budget.js         ← Budget page logic
+```
+
+---
+
+## Project 2 — 🎓 QuizMaster – Online MCQ Exam System
 
 An academic project built with pure **HTML, CSS and JavaScript** (no backend, no frameworks).  
 Students can take a timed 20-question Computer Science exam and instantly see their score, grade and answer review.

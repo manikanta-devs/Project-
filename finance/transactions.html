@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Transactions – FinTrack</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>💰 FinTrack</h1>
+      <p>Personal Finance Tracker</p>
+    </div>
+    <nav>
+      <a href="index.html"        class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="transactions.html" class="nav-item active"><span class="nav-icon">💳</span> Transactions</a>
+      <a href="budget.html"       class="nav-item"><span class="nav-icon">🎯</span> Budgets</a>
+    </nav>
+    <div class="sidebar-footer">FinTrack v1.0 &copy; 2026</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div style="font-size:1.15rem;font-weight:700;">Transactions</div>
+        <div class="page-subtitle">All income and expense records</div>
+      </div>
+      <div class="topbar-right">
+        <input type="month" class="month-picker" id="month-picker"/>
+        <button class="btn btn-primary" onclick="openAddModal()">➕ Add Transaction</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Summary strip -->
+      <div class="summary-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px;">
+        <div class="summary-card sc-income">
+          <div class="summary-icon">📈</div>
+          <div class="summary-info">
+            <div class="label">Income</div>
+            <div class="value text-success" id="s-income">—</div>
+          </div>
+        </div>
+        <div class="summary-card sc-expense">
+          <div class="summary-icon">📉</div>
+          <div class="summary-info">
+            <div class="label">Expense</div>
+            <div class="value text-danger" id="s-expense">—</div>
+          </div>
+        </div>
+        <div class="summary-card sc-balance">
+          <div class="summary-icon">💼</div>
+          <div class="summary-info">
+            <div class="label">Balance</div>
+            <div class="value text-primary" id="s-balance">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="card" style="margin-bottom:18px;">
+        <div class="filter-bar">
+          <input type="text" id="f-search" placeholder="🔍 Search description or category…"/>
+          <select id="f-type">
+            <option value="">All Types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+          <select id="f-category">
+            <option value="">All Categories</option>
+          </select>
+          <select id="f-sort">
+            <option value="date_desc">Newest First</option>
+            <option value="date_asc">Oldest First</option>
+            <option value="amount_desc">Highest Amount</option>
+            <option value="amount_asc">Lowest Amount</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="clearFilters()">✕ Clear</button>
+        </div>
+        <div id="filter-count" style="font-size:0.82rem;color:var(--text-3);"></div>
+      </div>
+
+      <!-- Transaction list -->
+      <div class="card">
+        <div id="tx-list-container">
+          <div class="empty-state">
+            <div class="empty-icon">💳</div>
+            <h3>No transactions found</h3>
+            <p>Add one using the button above.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="modal-backdrop" id="add-modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Add Transaction</h3>
+      <button class="btn btn-outline btn-sm btn-icon" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="type-toggle">
+        <button class="type-btn active income" id="type-income"  onclick="setType('income')">📈 Income</button>
+        <button class="type-btn expense"        id="type-expense" onclick="setType('expense')">📉 Expense</button>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Amount (₹)</label>
+          <input type="number" id="f-amount" placeholder="0" min="1" step="0.01"/>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="f-date"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="f-category-modal"></select>
+      </div>
+      <div class="form-group">
+        <label>Description <span style="color:var(--text-3);font-weight:400">(optional)</span></label>
+        <input type="text" id="f-desc" placeholder="e.g. Monthly groceries"/>
+      </div>
+      <p id="modal-error" style="color:var(--danger);font-size:0.83rem;display:none;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="save-btn" onclick="saveTransaction()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-backdrop" id="del-modal" style="display:none;">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-header">
+      <h3>Delete Transaction</h3>
+      <button class="btn btn-outline btn-sm btn-icon" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.92rem;color:var(--text-2);">Are you sure you want to delete this transaction? This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="app.js"></script>
+<script src="transactions.js"></script>
+</body>
+</html>
