@@ -174,55 +174,6 @@ const PFT = (() => {
     }));
   }
 
-  // ── Seed demo data ────────────────────────────────────────
-  function seedDemoData() {
-    const data = _load();
-    if (data.transactions.length > 0) return; // already has data
-
-    const today = new Date();
-    const m = (offset = 0) => {
-      const d = new Date(today);
-      d.setMonth(d.getMonth() - offset);
-      return d.toISOString().slice(0, 7);
-    };
-    const day = (month, d) => `${month}-${String(d).padStart(2, '0')}`;
-
-    const demos = [
-      // Current month
-      { type: 'income',  amount: 75000, category: 'Salary',         description: 'Monthly salary',        date: day(m(0), 1) },
-      { type: 'income',  amount: 12000, category: 'Freelance',       description: 'Website project',       date: day(m(0), 5) },
-      { type: 'expense', amount: 18000, category: 'Rent / Housing',  description: 'Monthly rent',          date: day(m(0), 2) },
-      { type: 'expense', amount: 4500,  category: 'Food & Dining',   description: 'Groceries & dining',    date: day(m(0), 8) },
-      { type: 'expense', amount: 1200,  category: 'Transport',       description: 'Fuel & cab rides',      date: day(m(0), 10) },
-      { type: 'expense', amount: 2800,  category: 'Shopping',        description: 'Clothes',               date: day(m(0), 12) },
-      { type: 'expense', amount: 999,   category: 'Entertainment',   description: 'OTT subscriptions',     date: day(m(0), 14) },
-      { type: 'expense', amount: 600,   category: 'Utilities',       description: 'Electricity bill',      date: day(m(0), 15) },
-      // Last month
-      { type: 'income',  amount: 75000, category: 'Salary',         description: 'Monthly salary',        date: day(m(1), 1) },
-      { type: 'expense', amount: 18000, category: 'Rent / Housing',  description: 'Monthly rent',          date: day(m(1), 2) },
-      { type: 'expense', amount: 5200,  category: 'Food & Dining',   description: 'Groceries & dining',    date: day(m(1), 9) },
-      { type: 'expense', amount: 8500,  category: 'Travel',          description: 'Weekend trip',          date: day(m(1), 18) },
-      { type: 'expense', amount: 3200,  category: 'Health & Medical', description: 'Doctor visit',         date: day(m(1), 22) },
-      // Two months ago
-      { type: 'income',  amount: 75000, category: 'Salary',         description: 'Monthly salary',        date: day(m(2), 1) },
-      { type: 'income',  amount: 5000,  category: 'Investment',      description: 'Dividend payout',       date: day(m(2), 20) },
-      { type: 'expense', amount: 18000, category: 'Rent / Housing',  description: 'Monthly rent',          date: day(m(2), 2) },
-      { type: 'expense', amount: 15000, category: 'Education',       description: 'Online course',         date: day(m(2), 10) },
-      { type: 'expense', amount: 4100,  category: 'Food & Dining',   description: 'Groceries & dining',    date: day(m(2), 11) },
-    ];
-
-    demos.forEach(tx => addTransaction(tx));
-
-    // Add budgets for current month
-    const cm = m(0);
-    setBudget('Food & Dining',    6000, cm);
-    setBudget('Transport',        2000, cm);
-    setBudget('Shopping',         3000, cm);
-    setBudget('Entertainment',    1500, cm);
-    setBudget('Rent / Housing',  18000, cm);
-    setBudget('Utilities',        1000, cm);
-  }
-
   // ── Utilities ─────────────────────────────────────────────
   function formatCurrency(amount) {
     return '₹' + Math.abs(amount).toLocaleString('en-IN', {
@@ -247,7 +198,6 @@ const PFT = (() => {
     addTransaction, deleteTransaction, updateTransaction, getTransactions,
     getSummary, getExpenseByCategory, getMonthlyTrend,
     setBudget, deleteBudget, getBudgets, getBudgetStatus,
-    seedDemoData,
     formatCurrency, currentMonth, monthLabel
   };
 })();

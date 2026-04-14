@@ -155,8 +155,11 @@
     }
     .card-banner .emoji { position:relative; z-index:1; filter:drop-shadow(0 4px 12px rgba(0,0,0,.4)); }
 
-    .banner-quizmaster { background:linear-gradient(135deg,#312e81,#4f46e5,#7c3aed); }
     .banner-fintrack    { background:linear-gradient(135deg,#064e3b,#059669,#0891b2); }
+    .banner-quizmaster  { background:linear-gradient(135deg,#312e81,#4f46e5,#7c3aed); }
+    .banner-taskflow    { background:linear-gradient(135deg,#7c2d12,#ea580c,#f59e0b); }
+    .banner-markedit    { background:linear-gradient(135deg,#065f46,#10b981,#34d399); }
+    .banner-resumecraft { background:linear-gradient(135deg,#1e1b4b,#6366f1,#a78bfa); }
 
     .card-body { padding:24px; flex:1; display:flex; flex-direction:column; }
 
@@ -169,6 +172,7 @@
     .tag-green  { background:rgba(16,185,129,.15); color:#6ee7b7; }
     .tag-blue   { background:rgba(6,182,212,.15);  color:#67e8f9; }
     .tag-amber  { background:rgba(245,158,11,.15); color:#fcd34d; }
+    .tag-rose   { background:rgba(244,63,94,.15);  color:#fda4af; }
 
     .card-body h3 { font-size:1.2rem; font-weight:800; margin-bottom:8px; }
     .card-body p  { font-size:0.9rem; color:var(--text2); line-height:1.65; flex:1; margin-bottom:18px; }
@@ -245,8 +249,8 @@
 
 <!-- STATS STRIP -->
 <div class="stats-strip">
-  <div class="stat"><div class="val">2</div><div class="lbl">Projects</div></div>
-  <div class="stat"><div class="val">10+</div><div class="lbl">Features</div></div>
+  <div class="stat"><div class="val">5</div><div class="lbl">Projects</div></div>
+  <div class="stat"><div class="val">30+</div><div class="lbl">Features</div></div>
   <div class="stat"><div class="val">0</div><div class="lbl">Dependencies</div></div>
   <div class="stat"><div class="val">100%</div><div class="lbl">Client Side</div></div>
 </div>
@@ -315,6 +319,87 @@
       </div>
     </div>
 
+    <!-- TaskFlow -->
+    <div class="project-card">
+      <div class="card-banner banner-taskflow">
+        <span class="emoji">📋</span>
+      </div>
+      <div class="card-body">
+        <div class="project-tags">
+          <span class="tag tag-amber">Productivity</span>
+          <span class="tag tag-rose">Drag &amp; Drop</span>
+          <span class="tag tag-blue">Kanban</span>
+        </div>
+        <h3>TaskFlow – Kanban Board</h3>
+        <p>A drag-and-drop Kanban task board with three columns, priority levels, due dates, and full CRUD operations for managing your workflow.</p>
+        <ul class="feature-list">
+          <li><span>📌</span> Three columns: To Do, In Progress, Done</li>
+          <li><span>🔄</span> Native HTML5 drag-and-drop between columns</li>
+          <li><span>🎨</span> Color-coded priorities (Low / Medium / High)</li>
+          <li><span>✏️</span> Inline edit &amp; delete with confirmation</li>
+          <li><span>💾</span> Persistent — survives page refresh via localStorage</li>
+        </ul>
+        <div class="card-footer">
+          <a href="taskflow/index.html" class="btn btn-gradient">🚀 Open App</a>
+          <a href="https://github.com/manikanta-devs/Project-/tree/main/taskflow" target="_blank" class="btn btn-ghost">View Code</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- MarkEdit -->
+    <div class="project-card">
+      <div class="card-banner banner-markedit">
+        <span class="emoji">📝</span>
+      </div>
+      <div class="card-body">
+        <div class="project-tags">
+          <span class="tag tag-green">Markdown</span>
+          <span class="tag tag-purple">Editor</span>
+          <span class="tag tag-blue">Live Preview</span>
+        </div>
+        <h3>MarkEdit – Markdown Notepad</h3>
+        <p>A split-pane live Markdown editor with real-time preview, formatting toolbar, multi-note management, and export functionality.</p>
+        <ul class="feature-list">
+          <li><span>✏️</span> Split-pane editor with live HTML preview</li>
+          <li><span>🔧</span> Toolbar: bold, italic, headings, links, code &amp; more</li>
+          <li><span>📂</span> Multi-note management with sidebar</li>
+          <li><span>💾</span> Export notes as .md files</li>
+          <li><span>🗄️</span> Persistent — survives page refresh via localStorage</li>
+        </ul>
+        <div class="card-footer">
+          <a href="markedit/index.html" class="btn btn-gradient">🚀 Open App</a>
+          <a href="https://github.com/manikanta-devs/Project-/tree/main/markedit" target="_blank" class="btn btn-ghost">View Code</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ResumeCraft -->
+    <div class="project-card">
+      <div class="card-banner banner-resumecraft">
+        <span class="emoji">📄</span>
+      </div>
+      <div class="card-body">
+        <div class="project-tags">
+          <span class="tag tag-purple">SaaS</span>
+          <span class="tag tag-blue">Live Preview</span>
+          <span class="tag tag-green">PDF Export</span>
+        </div>
+        <h3>ResumeCraft – Resume Builder</h3>
+        <p>A premium SaaS-quality resume builder with 3 professional templates, live preview, 6 color themes, and one-click PDF export.</p>
+        <ul class="feature-list">
+          <li><span>🎨</span> 3 templates: Modern (sidebar), Classic, Minimal</li>
+          <li><span>👁️</span> Real-time A4 preview as you type</li>
+          <li><span>🖨️</span> One-click PDF export via browser print</li>
+          <li><span>🎯</span> 7 resume sections with dynamic add/remove</li>
+          <li><span>💾</span> Auto-saves to localStorage</li>
+        </ul>
+        <div class="card-footer">
+          <a href="resumecraft/index.html" class="btn btn-gradient">🚀 Open App</a>
+          <a href="https://github.com/manikanta-devs/Project-/tree/main/resumecraft" target="_blank" class="btn btn-ghost">View Code</a>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -332,6 +417,8 @@
     <div class="tech-chip"><span class="tc-icon">📊</span> Chart.js</div>
     <div class="tech-chip"><span class="tc-icon">💾</span> localStorage API</div>
     <div class="tech-chip"><span class="tc-icon">📦</span> sessionStorage API</div>
+    <div class="tech-chip"><span class="tc-icon">🖱️</span> Drag &amp; Drop API</div>
+    <div class="tech-chip"><span class="tc-icon">🖨️</span> Print / PDF API</div>
     <div class="tech-chip"><span class="tc-icon">🚀</span> GitHub Pages</div>
   </div>
 </section>
@@ -344,4 +431,3 @@
 
 </body>
 </html>
-
