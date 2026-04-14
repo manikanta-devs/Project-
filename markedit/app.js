@@ -133,11 +133,13 @@
     }
 
     function sanitizeUrl(url) {
-        var decoded = url.replace(/&amp;/g, '&')
-                        .replace(/&lt;/g, '<')
-                        .replace(/&gt;/g, '>')
-                        .replace(/&quot;/g, '"')
-                        .replace(/&#39;/g, "'");
+        // Decode HTML entities for protocol validation only
+        var decoded = url;
+        decoded = decoded.replace(/&amp;/g, '&');
+        decoded = decoded.replace(/&lt;/g, '<');
+        decoded = decoded.replace(/&gt;/g, '>');
+        decoded = decoded.replace(/&quot;/g, '"');
+        decoded = decoded.replace(/&#39;/g, "'");
 
         var trimmed = decoded.trim().toLowerCase();
 
@@ -151,6 +153,7 @@
             return '';
         }
 
+        // Return the HTML-safe version for use in attributes
         return url;
     }
 
@@ -163,7 +166,7 @@
         html = html.replace(/```([\s\S]*?)```/g, function (match, code) {
             var index = codeBlocks.length;
             codeBlocks.push('<pre><code>' + code.replace(/^\n/, '').replace(/\n$/, '') + '</code></pre>');
-            return '\x00CODEBLOCK' + index + '\x00';
+            return '___CODEBLOCK_' + index + '___';
         });
 
         // Inline code
@@ -171,7 +174,7 @@
         html = html.replace(/`([^`\n]+)`/g, function (match, code) {
             var index = inlineCodes.length;
             inlineCodes.push('<code>' + code + '</code>');
-            return '\x00INLINECODE' + index + '\x00';
+            return '___INLINECODE_' + index + '___';
         });
 
         // Step 3: Apply markdown transformations
@@ -218,14 +221,23 @@
         html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n');
 
         // Unordered lists
-        html = html.replace(/^[-*+]\s+(.+)$/gm, '<li>$1</li>');
+        html = html.replace(/^[-*+]\s+(.+)$/gm, '<uli>$1</uli>');
 
         // Ordered lists
-        html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+        html = html.replace(/^\d+\.\s+(.+)$/gm, '<oli>$1</oli>');
 
-        // Wrap consecutive <li> items in <ul> or <ol>
-        html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, function (match) {
-            return '<ul>' + match.trim() + '</ul>';
+        // Wrap consecutive <uli> items in <ul>
+        html = html.replace(/((?:<uli>.*<\/uli>\n?)+)/g, function (match) {
+            return '<ul>' + match.replace(/<\/?uli>/g, function (tag) {
+                return tag === '<uli>' ? '<li>' : '</li>';
+            }).trim() + '</ul>';
+        });
+
+        // Wrap consecutive <oli> items in <ol>
+        html = html.replace(/((?:<oli>.*<\/oli>\n?)+)/g, function (match) {
+            return '<ol>' + match.replace(/<\/?oli>/g, function (tag) {
+                return tag === '<oli>' ? '<li>' : '</li>';
+            }).trim() + '</ol>';
         });
 
         // Paragraphs: wrap lines that aren't already wrapped in block tags
@@ -233,7 +245,7 @@
         var result = [];
         var blockTags = /^<(h[1-6]|pre|ul|ol|li|blockquote|hr|div|table)/;
         var closingBlockTags = /^<\/(ul|ol|blockquote)/;
-        var placeholder = /^\x00(CODEBLOCK|INLINECODE)/;
+        var placeholder = /^___(?:CODEBLOCK|INLINECODE)_/;
 
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i].trim();
@@ -252,13 +264,13 @@
 
         // Restore inline codes
         for (var ic = 0; ic < inlineCodes.length; ic++) {
-            html = html.replace('\x00INLINECODE' + ic + '\x00', inlineCodes[ic]);
+            html = html.replace('___INLINECODE_' + ic + '___', inlineCodes[ic]);
         }
 
         // Restore code blocks
         for (var cb = 0; cb < codeBlocks.length; cb++) {
-            html = html.replace('<p>\x00CODEBLOCK' + cb + '\x00</p>', codeBlocks[cb]);
-            html = html.replace('\x00CODEBLOCK' + cb + '\x00', codeBlocks[cb]);
+            html = html.replace('<p>___CODEBLOCK_' + cb + '___</p>', codeBlocks[cb]);
+            html = html.replace('___CODEBLOCK_' + cb + '___', codeBlocks[cb]);
         }
 
         return html;
@@ -339,7 +351,7 @@
         var note = getNoteById(state.activeNoteId);
         if (!note) return;
 
-        var filename = (note.title || 'untitled').replace(/[^a-z0-9_\- ]/gi, '').trim();
+        var filename = (note.title || 'untitled').replace(/[^a-z0-9_\- ]/gi, '').trim().replace(/\s+/g, '_');
         if (!filename) filename = 'note';
         filename += '.md';
 
