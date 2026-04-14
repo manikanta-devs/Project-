@@ -1,6 +1,10 @@
 # 🚀 Academic Projects Portfolio
 
-Two complete, product-level projects — built with pure HTML, CSS and JavaScript (no backend, no frameworks).
+[![Deploy to GitHub Pages](https://github.com/manikanta-devs/Project-/actions/workflows/deploy.yml/badge.svg)](https://github.com/manikanta-devs/Project-/actions/workflows/deploy.yml)
+
+> 🌐 **Live Site:** [manikanta-devs.github.io/Project-](https://manikanta-devs.github.io/Project-)
+
+Two complete, product-level projects — built with pure HTML, CSS and JavaScript (no backend, no frameworks). Deployed live via GitHub Pages.
 
 ---
 
