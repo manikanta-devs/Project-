@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exam – QuizMaster</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="logo"><span>Q</span>QuizMaster</a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+    </div>
+  </nav>
+
+  <!-- SETUP SCREEN -->
+  <div class="container" id="setup-screen">
+    <div class="card" style="max-width:520px;margin:40px auto;">
+      <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:6px;">📝 Enter Your Details</h2>
+      <p style="color:var(--text-light);margin-bottom:24px;font-size:0.95rem;">Fill in your name to personalise your result card.</p>
+      <div class="form-group">
+        <label for="student-name">Your Full Name</label>
+        <input type="text" id="student-name" placeholder="e.g. Manikanta Reddy" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label for="student-roll">Roll Number / ID <span style="color:var(--text-light);font-weight:400;">(optional)</span></label>
+        <input type="text" id="student-roll" placeholder="e.g. CS22B001" autocomplete="off" />
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="startExam()">
+        🚀 Start Exam
+      </button>
+      <p id="setup-error" style="color:var(--danger);font-size:0.88rem;margin-top:10px;display:none;">
+        ⚠️ Please enter your name to continue.
+      </p>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div class="container" id="quiz-screen" style="display:none;">
+
+    <!-- Header: counter + timer -->
+    <div class="quiz-header">
+      <div class="question-counter">
+        Question <strong id="q-current">1</strong> of <strong>20</strong>
+      </div>
+      <div class="timer-wrap">
+        <span class="timer-icon">⏱️</span>
+        <span class="timer-display" id="timer-display">10:00</span>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progress-bar" style="width:5%;"></div>
+    </div>
+
+    <!-- Question card -->
+    <div class="card">
+      <div class="question-number" id="q-label">Question 1</div>
+      <div class="question-text" id="q-text"></div>
+      <div class="options-list" id="options-list"></div>
+
+      <div class="quiz-nav">
+        <button class="btn btn-outline" id="btn-prev" onclick="prevQuestion()">← Previous</button>
+        <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()">Next →</button>
+        <button class="btn btn-success" id="btn-submit" onclick="confirmSubmit()" style="display:none;">
+          ✅ Submit Exam
+        </button>
+      </div>
+    </div>
+
+    <!-- Question palette -->
+    <div class="card" style="margin-top:0;">
+      <h3 style="font-size:0.9rem;font-weight:700;margin-bottom:12px;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;">
+        Question Navigator
+      </h3>
+      <div id="q-palette" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      <div style="display:flex;gap:16px;margin-top:14px;font-size:0.82rem;color:var(--text-light);">
+        <span>⬜ Not visited</span>
+        <span>🟦 Answered</span>
+        <span>🟨 Visited, not answered</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="questions.js"></script>
+  <script src="quiz.js"></script>
+</body>
+</html>

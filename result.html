@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Result – QuizMaster</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="logo"><span>Q</span>QuizMaster</a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="quiz.html">Retake</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- RESULT CARD -->
+    <div class="card">
+      <div class="result-hero">
+        <div class="result-emoji" id="result-emoji">🎉</div>
+        <div class="result-grade" id="result-grade">A</div>
+        <h1 class="result-title" id="result-title">Excellent Performance!</h1>
+        <p class="result-subtitle" id="result-name-display">—</p>
+        <p style="color:var(--text-light);font-size:0.9rem;" id="result-time">Time taken: —</p>
+      </div>
+
+      <!-- Score breakdown -->
+      <div class="score-breakdown">
+        <div class="score-item">
+          <div class="score-val text-success" id="score-correct">0</div>
+          <div class="score-lbl">✅ Correct</div>
+        </div>
+        <div class="score-item">
+          <div class="score-val text-danger" id="score-wrong">0</div>
+          <div class="score-lbl">❌ Wrong</div>
+        </div>
+        <div class="score-item">
+          <div class="score-val text-warning" id="score-skipped">0</div>
+          <div class="score-lbl">⏭️ Skipped</div>
+        </div>
+        <div class="score-item">
+          <div class="score-val text-primary" id="score-percent">0%</div>
+          <div class="score-lbl">📊 Score</div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:8px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+        <a href="quiz.html" class="btn btn-primary">🔄 Retake Exam</a>
+        <a href="index.html" class="btn btn-outline">🏠 Home</a>
+        <button class="btn btn-outline" onclick="window.print()">🖨️ Print Result</button>
+      </div>
+    </div>
+
+    <!-- ANSWER REVIEW -->
+    <div class="card">
+      <div class="review-section">
+        <h3>📖 Answer Review</h3>
+        <div id="review-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>QuizMaster &copy; 2026 &mdash; Academic MCQ Exam System</p>
+  </footer>
+
+  <script src="questions.js"></script>
+  <script>
+    // Load result from sessionStorage
+    const result = JSON.parse(sessionStorage.getItem('quizResult'));
+    if (!result) {
+      window.location.href = 'index.html';
+    } else {
+      const { name, roll, answers, timeTaken } = result;
+      let correct = 0, wrong = 0, skipped = 0;
+
+      questions.forEach((q, i) => {
+        if (answers[i] === null || answers[i] === undefined) {
+          skipped++;
+        } else if (answers[i] === q.answer) {
+          correct++;
+        } else {
+          wrong++;
+        }
+      });
+
+      const total = questions.length;
+      const pct = Math.round((correct / total) * 100);
+
+      // Grade
+      let grade, gradeClass, emoji, title;
+      if (pct >= 90) {
+        grade = 'A'; gradeClass = 'grade-a'; emoji = '🏆'; title = 'Excellent Performance!';
+      } else if (pct >= 70) {
+        grade = 'B'; gradeClass = 'grade-b'; emoji = '👍'; title = 'Good Job!';
+      } else if (pct >= 50) {
+        grade = 'C'; gradeClass = 'grade-c'; emoji = '📚'; title = 'Average Performance';
+      } else {
+        grade = 'D'; gradeClass = 'grade-d'; emoji = '💪'; title = 'Keep Practicing!';
+      }
+
+      document.getElementById('result-emoji').textContent = emoji;
+      document.getElementById('result-grade').textContent = grade;
+      document.getElementById('result-grade').className = 'result-grade ' + gradeClass;
+      document.getElementById('result-title').textContent = title;
+      document.getElementById('result-name-display').textContent =
+        name + (roll ? '  ·  Roll No: ' + roll : '') + '  ·  Score: ' + correct + '/' + total;
+
+      const mins = Math.floor(timeTaken / 60);
+      const secs = timeTaken % 60;
+      document.getElementById('result-time').textContent =
+        'Time taken: ' + mins + 'm ' + secs + 's';
+
+      document.getElementById('score-correct').textContent = correct;
+      document.getElementById('score-wrong').textContent = wrong;
+      document.getElementById('score-skipped').textContent = skipped;
+      document.getElementById('score-percent').textContent = pct + '%';
+
+      // Review
+      const reviewList = document.getElementById('review-list');
+      questions.forEach((q, i) => {
+        const userAns = answers[i];
+        const isCorrect = userAns === q.answer;
+        const isSkipped = userAns === null || userAns === undefined;
+
+        const item = document.createElement('div');
+        item.className = 'review-item';
+
+        let statusHtml = '';
+        if (isSkipped) {
+          statusHtml = `<div class="review-answer"><span class="dot dot-skipped"></span> <span style="color:var(--text-light)">Skipped</span></div>`;
+        } else if (isCorrect) {
+          statusHtml = `<div class="review-answer"><span class="dot dot-correct"></span> <span style="color:var(--success)">Your answer: <strong>${q.options[userAns]}</strong> ✓</span></div>`;
+        } else {
+          statusHtml = `
+            <div class="review-answer"><span class="dot dot-wrong"></span> <span style="color:var(--danger)">Your answer: <strong>${q.options[userAns]}</strong> ✗</span></div>
+            <div class="review-answer"><span class="dot dot-correct"></span> <span style="color:var(--success)">Correct answer: <strong>${q.options[q.answer]}</strong></span></div>
+          `;
+        }
+
+        item.innerHTML = `
+          <div class="q-text">Q${i + 1}. ${q.question}</div>
+          ${statusHtml}
+        `;
+        reviewList.appendChild(item);
+      });
+    }
+  </script>
+</body>
+</html>
