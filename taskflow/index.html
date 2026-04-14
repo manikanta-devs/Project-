@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow – Kanban Task Board</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="navbar-brand">
+        <h1>📋 TaskFlow</h1>
+        <span class="navbar-subtitle">Kanban Task Board</span>
+      </div>
+      <a href="../index.html" class="back-link">← Back to Portfolio</a>
+    </div>
+  </nav>
+
+  <main class="board-container">
+    <div class="board-header">
+      <button id="add-task-btn" class="btn btn-primary">＋ New Task</button>
+    </div>
+
+    <div class="board">
+      <div class="column" data-status="todo">
+        <div class="column-header">
+          <h2>📌 To Do <span class="task-count" id="count-todo">0</span></h2>
+        </div>
+        <div class="task-list" id="list-todo" data-status="todo"></div>
+        <div class="empty-state" id="empty-todo">
+          <span class="empty-icon">📝</span>
+          <p>No tasks yet</p>
+          <p class="empty-hint">Click "＋ New Task" to get started</p>
+        </div>
+      </div>
+
+      <div class="column" data-status="inprogress">
+        <div class="column-header">
+          <h2>🔧 In Progress <span class="task-count" id="count-inprogress">0</span></h2>
+        </div>
+        <div class="task-list" id="list-inprogress" data-status="inprogress"></div>
+        <div class="empty-state" id="empty-inprogress">
+          <span class="empty-icon">⏳</span>
+          <p>Nothing in progress</p>
+          <p class="empty-hint">Drag tasks here to start working</p>
+        </div>
+      </div>
+
+      <div class="column" data-status="done">
+        <div class="column-header">
+          <h2>✅ Done <span class="task-count" id="count-done">0</span></h2>
+        </div>
+        <div class="task-list" id="list-done" data-status="done"></div>
+        <div class="empty-state" id="empty-done">
+          <span class="empty-icon">🎉</span>
+          <p>No completed tasks</p>
+          <p class="empty-hint">Drag finished tasks here</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add / Edit Task Modal -->
+  <div class="modal-overlay" id="task-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">New Task</h3>
+        <button class="modal-close" id="modal-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+      <form id="task-form" novalidate>
+        <div class="form-group">
+          <label for="task-title">Title <span class="required">*</span></label>
+          <input type="text" id="task-title" maxlength="100" required placeholder="Enter task title">
+          <span class="form-error" id="title-error">Title is required</span>
+        </div>
+        <div class="form-group">
+          <label for="task-desc">Description</label>
+          <textarea id="task-desc" rows="3" maxlength="500" placeholder="Optional description"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="task-priority">Priority</label>
+            <select id="task-priority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="task-due">Due Date</label>
+            <input type="date" id="task-due">
+          </div>
+        </div>
+        <input type="hidden" id="task-id">
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="modal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="modal-save-btn">Add Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Delete Task</h3>
+        <button class="modal-close" id="delete-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+      <p class="delete-message">Are you sure you want to delete "<span id="delete-task-name"></span>"? This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="delete-cancel-btn">Cancel</button>
+        <button class="btn btn-danger" id="delete-confirm-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
