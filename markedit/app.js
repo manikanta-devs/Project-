@@ -132,22 +132,21 @@
             .replace(/'/g, '&#39;');
     }
 
+    function decodeHtmlEntities(str) {
+        var el = document.createElement('textarea');
+        el.innerHTML = str;
+        return el.value;
+    }
+
     function sanitizeUrl(url) {
         // The url parameter is HTML-entity-encoded (from escapeHtml).
-        // We decode entities here ONLY to inspect the true protocol.
-        // The decoded value is never used in output — we return the
-        // original HTML-safe string so it can be placed in an attribute.
-        var decoded = url;
-        decoded = decoded.replace(/&amp;/g, '&');
-        decoded = decoded.replace(/&lt;/g, '<');
-        decoded = decoded.replace(/&gt;/g, '>');
-        decoded = decoded.replace(/&quot;/g, '"');
-        decoded = decoded.replace(/&#39;/g, "'");
-
+        // Decode entities to inspect the true protocol, using a safe
+        // DOM-based approach that avoids regex double-unescape concerns.
+        var decoded = decodeHtmlEntities(url);
         var trimmed = decoded.trim().toLowerCase();
 
         // Block dangerous protocols
-        if (/^(javascript|vbscript|data|file):/i.test(trimmed)) {
+        if (/^(javascript|vbscript|data|file|blob):/i.test(trimmed)) {
             return '';
         }
 
