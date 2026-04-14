@@ -67,8 +67,10 @@
       .replace(/'/g, '&#039;');
   }
 
+  var _uidCounter = 0;
   function uid() {
-    return Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
+    _uidCounter++;
+    return Date.now().toString(36) + '-' + _uidCounter.toString(36) + '-' + Math.random().toString(36).slice(2, 7);
   }
 
   function debounce(fn, ms) {
