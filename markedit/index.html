@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarkEdit – Live Markdown Notepad</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <a href="../index.html" class="back-link">← Back to Portfolio</a>
+            <div class="navbar-brand">
+                <h1>📝 MarkEdit</h1>
+                <span class="navbar-subtitle">Live Markdown Notepad</span>
+            </div>
+        </div>
+        <div class="navbar-right">
+            <button id="btn-toggle-sidebar" class="nav-btn" title="Toggle Sidebar">📂 Notes</button>
+            <button id="btn-export" class="nav-btn" title="Export as .md">💾 Export</button>
+            <div class="counters">
+                <span id="word-count">0 words</span>
+                <span class="counter-sep">·</span>
+                <span id="char-count">0 chars</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h2>My Notes</h2>
+                <button id="btn-new-note" class="btn-new-note" title="New Note">➕ New</button>
+            </div>
+            <ul id="notes-list" class="notes-list"></ul>
+        </aside>
+
+        <!-- Main content -->
+        <main class="main-content">
+            <!-- Note title -->
+            <div class="note-title-bar">
+                <input type="text" id="note-title" class="note-title-input" placeholder="Untitled Note" aria-label="Note title">
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <button class="tool-btn" data-action="bold" title="Bold">𝐁</button>
+                <button class="tool-btn" data-action="italic" title="Italic">𝐼</button>
+                <span class="toolbar-sep"></span>
+                <button class="tool-btn" data-action="h1" title="Heading 1">H1</button>
+                <button class="tool-btn" data-action="h2" title="Heading 2">H2</button>
+                <button class="tool-btn" data-action="h3" title="Heading 3">H3</button>
+                <span class="toolbar-sep"></span>
+                <button class="tool-btn" data-action="link" title="Link">🔗</button>
+                <button class="tool-btn" data-action="image" title="Image">🖼️</button>
+                <button class="tool-btn" data-action="code" title="Inline Code">‹›</button>
+                <button class="tool-btn" data-action="codeblock" title="Code Block">```</button>
+                <span class="toolbar-sep"></span>
+                <button class="tool-btn" data-action="ul" title="Bullet List">• List</button>
+                <button class="tool-btn" data-action="ol" title="Numbered List">1. List</button>
+                <button class="tool-btn" data-action="quote" title="Blockquote">❝ Quote</button>
+                <button class="tool-btn" data-action="hr" title="Horizontal Rule">― Rule</button>
+            </div>
+
+            <!-- Editor / Preview split -->
+            <div class="editor-preview-container">
+                <div class="pane editor-pane">
+                    <div class="pane-header">
+                        <span>✏️ Editor</span>
+                        <button id="btn-view-editor" class="mobile-toggle active">Editor</button>
+                    </div>
+                    <textarea id="editor" class="editor-textarea" placeholder="Start writing markdown here..." spellcheck="true"></textarea>
+                </div>
+                <div class="pane preview-pane">
+                    <div class="pane-header">
+                        <span>👁️ Preview</span>
+                        <button id="btn-view-preview" class="mobile-toggle">Preview</button>
+                    </div>
+                    <div id="preview" class="preview-content"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
