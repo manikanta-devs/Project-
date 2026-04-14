@@ -9,8 +9,6 @@ let pendingDeleteId = null;
 
 // ── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  PFT.seedDemoData();
-
   const picker = document.getElementById('month-picker');
   picker.value = currentMonth;
   picker.addEventListener('change', e => {
