@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ResumeCraft — Build stunning professional resumes in minutes">
+  <title>ResumeCraft — Professional Resume Builder</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       NAVBAR
+       ═══════════════════════════════════════════════════════════ -->
+  <nav class="rc-nav" id="rcNav">
+    <a href="../index.html" class="rc-nav__back">← Portfolio</a>
+
+    <div class="rc-nav__brand">
+      <span class="rc-nav__icon">📄</span>
+      <span class="rc-nav__name">ResumeCraft</span>
+    </div>
+
+    <div class="rc-nav__controls">
+
+      <div class="rc-ctrl-group">
+        <span class="rc-ctrl-label">Template</span>
+        <div class="rc-btn-group" id="templateBtns">
+          <button class="rc-ctrl-btn active" data-template="modern">Modern</button>
+          <button class="rc-ctrl-btn" data-template="classic">Classic</button>
+          <button class="rc-ctrl-btn" data-template="minimal">Minimal</button>
+        </div>
+      </div>
+
+      <div class="rc-ctrl-group">
+        <span class="rc-ctrl-label">Color</span>
+        <div class="rc-swatches" id="colorSwatches">
+          <button class="rc-swatch active" data-color="#6366f1" style="--sw:#6366f1" title="Indigo"></button>
+          <button class="rc-swatch" data-color="#10b981" style="--sw:#10b981" title="Emerald"></button>
+          <button class="rc-swatch" data-color="#0ea5e9" style="--sw:#0ea5e9" title="Ocean"></button>
+          <button class="rc-swatch" data-color="#f43f5e" style="--sw:#f43f5e" title="Rose"></button>
+          <button class="rc-swatch" data-color="#f59e0b" style="--sw:#f59e0b" title="Amber"></button>
+          <button class="rc-swatch" data-color="#8b5cf6" style="--sw:#8b5cf6" title="Violet"></button>
+        </div>
+      </div>
+
+      <div class="rc-ctrl-group">
+        <span class="rc-ctrl-label">Size</span>
+        <div class="rc-btn-group" id="fontSizeBtns">
+          <button class="rc-ctrl-btn" data-size="small">S</button>
+          <button class="rc-ctrl-btn active" data-size="medium">M</button>
+          <button class="rc-ctrl-btn" data-size="large">L</button>
+        </div>
+      </div>
+
+      <button class="rc-btn-export" id="btnExport">🖨️ Export PDF</button>
+
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       APP LAYOUT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="rc-layout">
+
+    <!-- ── Editor Panel (40%) ────────────────────────────────── -->
+    <aside class="rc-editor" id="rcEditor">
+      <div class="rc-editor__scroll">
+        <header class="rc-editor__header">
+          <div class="rc-editor__header-left">
+            <h2 class="rc-editor__title">Resume Editor</h2>
+            <p class="rc-editor__sub">Changes save automatically</p>
+          </div>
+          <span class="rc-save-badge" id="saveBadge">✓ Saved</span>
+        </header>
+        <div class="rc-sections" id="rcSections">
+          <!-- Populated by app.js -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Preview Panel (60%) ───────────────────────────────── -->
+    <main class="rc-preview" id="rcPreview">
+      <div class="rc-preview__scroll">
+        <div class="rc-preview__bar">
+          <span class="rc-preview__label">👁 Live Preview</span>
+          <span class="rc-preview__hint">Scroll to see full resume</span>
+        </div>
+        <div class="rc-a4-wrap">
+          <div id="resumePreview" class="rc-resume" data-fontsize="medium">
+            <!-- Built by app.js -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
