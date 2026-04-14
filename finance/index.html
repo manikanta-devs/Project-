@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Dashboard – FinTrack</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>💰 FinTrack</h1>
+      <p>Personal Finance Tracker</p>
+    </div>
+    <nav>
+      <a href="index.html"        class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="transactions.html" class="nav-item"><span class="nav-icon">💳</span> Transactions</a>
+      <a href="budget.html"       class="nav-item"><span class="nav-icon">🎯</span> Budgets</a>
+    </nav>
+    <div class="sidebar-footer">FinTrack v1.0 &copy; 2026</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" style="font-size:1.15rem;font-weight:700;">Dashboard</div>
+        <div class="page-subtitle" id="month-label">—</div>
+      </div>
+      <div class="topbar-right">
+        <input type="month" class="month-picker" id="month-picker"/>
+        <button class="btn btn-primary" onclick="openAddModal()">➕ Add Transaction</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Summary cards -->
+      <div class="summary-grid" id="summary-grid">
+        <div class="summary-card sc-balance">
+          <div class="summary-icon">💼</div>
+          <div class="summary-info">
+            <div class="label">Net Balance</div>
+            <div class="value text-primary" id="s-balance">—</div>
+            <div class="sub" id="s-txcount">— transactions</div>
+          </div>
+        </div>
+        <div class="summary-card sc-income">
+          <div class="summary-icon">📈</div>
+          <div class="summary-info">
+            <div class="label">Total Income</div>
+            <div class="value text-success" id="s-income">—</div>
+            <div class="sub" id="s-income-count">—</div>
+          </div>
+        </div>
+        <div class="summary-card sc-expense">
+          <div class="summary-icon">📉</div>
+          <div class="summary-info">
+            <div class="label">Total Expenses</div>
+            <div class="value text-danger" id="s-expense">—</div>
+            <div class="sub" id="s-expense-count">—</div>
+          </div>
+        </div>
+        <div class="summary-card sc-savings">
+          <div class="summary-icon">🏦</div>
+          <div class="summary-info">
+            <div class="label">Savings Rate</div>
+            <div class="value text-warning" id="s-savings">—</div>
+            <div class="sub">of income saved</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📅 Monthly Trend (6 months)</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-trend"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🍕 Expense Breakdown</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="chart-pie"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🕒 Recent Transactions</span>
+          <a href="transactions.html" class="see-all">See all →</a>
+        </div>
+        <div id="recent-list">
+          <div class="empty-state">
+            <div class="empty-icon">💸</div>
+            <h3>No transactions yet</h3>
+            <p>Click "Add Transaction" to get started.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app-wrapper -->
+
+<!-- ADD TRANSACTION MODAL -->
+<div class="modal-backdrop" id="add-modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Add Transaction</h3>
+      <button class="btn btn-outline btn-sm btn-icon" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="type-toggle">
+        <button class="type-btn active income" id="type-income"  onclick="setType('income')">📈 Income</button>
+        <button class="type-btn expense"        id="type-expense" onclick="setType('expense')">📉 Expense</button>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Amount (₹)</label>
+          <input type="number" id="f-amount" placeholder="0" min="1" step="0.01"/>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="f-date"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="f-category"></select>
+      </div>
+      <div class="form-group">
+        <label>Description <span style="color:var(--text-3);font-weight:400">(optional)</span></label>
+        <input type="text" id="f-desc" placeholder="e.g. Monthly groceries"/>
+      </div>
+      <p id="modal-error" style="color:var(--danger);font-size:0.83rem;display:none;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTransaction()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<script src="app.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
