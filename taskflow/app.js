@@ -95,23 +95,35 @@
     return due < today;
   }
 
-  /* ===== Render ===== */
+  /* ===== Search & Filter ===== */
+  var searchInput   = document.getElementById('task-search');
+  var filterPriority = document.getElementById('task-filter-priority');
+
+  function getFilteredTasks() {
+    var q = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    var pri = filterPriority ? filterPriority.value : '';
+    return tasks.filter(function (t) {
+      var matchQ = !q || (t.title || '').toLowerCase().indexOf(q) !== -1 || (t.description || '').toLowerCase().indexOf(q) !== -1;
+      var matchP = !pri || t.priority === pri;
+      return matchQ && matchP;
+    });
+  }
+
   function render() {
     // Clear columns
     Object.keys(columns).forEach(function (status) {
       columns[status].innerHTML = '';
     });
 
-    // Count per column
+    var filtered = getFilteredTasks();
     var counts = { todo: 0, inprogress: 0, done: 0 };
 
-    tasks.forEach(function (task) {
+    filtered.forEach(function (task) {
       counts[task.status] = (counts[task.status] || 0) + 1;
       var card = createCardElement(task);
       columns[task.status].appendChild(card);
     });
 
-    // Update counts and empty states
     Object.keys(counts).forEach(function (status) {
       document.getElementById('count-' + status).textContent = counts[status];
       var emptyEl = document.getElementById('empty-' + status);
@@ -365,6 +377,9 @@
   /* ===== Event Listeners ===== */
   addTaskBtn.addEventListener('click', openAddModal);
   taskForm.addEventListener('submit', handleFormSubmit);
+
+  if (searchInput)    searchInput.addEventListener('input', render);
+  if (filterPriority) filterPriority.addEventListener('change', render);
 
   titleInput.addEventListener('input', function () {
     if (titleInput.value.trim()) clearValidation();

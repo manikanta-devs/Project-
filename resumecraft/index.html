@@ -113,8 +113,37 @@
             <h2 class="rc-editor__title">Resume Editor</h2>
             <p class="rc-editor__sub">Changes save automatically</p>
           </div>
-          <span class="rc-save-badge" id="saveBadge">✓ Saved</span>
+          <div class="rc-editor__header-right">
+            <button class="rc-btn-import" id="btnQuickImport" type="button" title="Upload PDF, image or text to auto-fill all fields">📤 Import Resume</button>
+            <span class="rc-save-badge" id="saveBadge">✓ Saved</span>
+          </div>
         </header>
+
+        <!-- ── Quick-import overlay (hidden until triggered) ── -->
+        <div class="rc-import-overlay hidden" id="importOverlay" role="dialog" aria-modal="true" aria-label="Import Resume">
+          <div class="rc-import-box">
+            <div class="rc-import-box__header">
+              <h3>📤 Import Your Resume</h3>
+              <button class="rc-import-close" id="btnImportClose" type="button" aria-label="Close">✕</button>
+            </div>
+            <p class="rc-import-box__sub">Upload a PDF, image (JPG/PNG), or plain-text file — all fields will be auto-populated instantly.</p>
+            <div class="rc-upload-zone rc-upload-zone--modal" id="quickUploadZone">
+              <div class="rc-upload-icon">📄</div>
+              <div class="rc-upload-text">
+                <strong>Drop your resume here</strong><br>
+                <span>PDF, JPG, PNG, TXT — drag &amp; drop or click</span>
+              </div>
+              <input type="file" id="quickResumeFile" accept=".txt,.pdf,.jpg,.jpeg,.png" style="display:none">
+              <button class="rc-btn-primary" id="btnQuickChoose" type="button">📂 Choose File</button>
+            </div>
+            <div id="quickImportStatus" class="rc-parser-status hidden"></div>
+            <div class="rc-ocr-progress" id="quickImportOCRProgress">
+              <span style="font-size:0.8rem;color:var(--ed-t3)">OCR scanning…</span>
+              <div class="rc-ocr-progress-bar-track"><div class="rc-ocr-progress-bar-fill"></div></div>
+            </div>
+            <div id="quickImportPreview" class="rc-parser-preview hidden"></div>
+          </div>
+        </div>
 
         <!-- Resume Strength Meter -->
         <div class="rc-strength-wrap" id="strengthWrap">
@@ -196,18 +225,22 @@
     <div class="rc-tool-scroll">
       <div class="rc-tool-header">
         <h1 class="rc-tool-title">🔍 Resume Parser</h1>
-        <p class="rc-tool-desc">Upload your existing resume to automatically extract and populate your resume fields. Supports <strong>.txt</strong> and <strong>.pdf</strong> files.</p>
+        <p class="rc-tool-desc">Upload your existing resume to automatically extract and populate all fields. Supports <strong>PDF</strong>, <strong>images</strong> (JPG/PNG — including scanned/photographed resumes), and <strong>.txt</strong> files.</p>
       </div>
       <div class="rc-upload-zone" id="uploadZone">
         <div class="rc-upload-icon">📄</div>
         <div class="rc-upload-text">
           <strong>Drop your resume here</strong><br>
-          <span>or click to browse — .txt or .pdf files supported</span>
+          <span>PDF · JPG · PNG · TXT — drag &amp; drop or click to browse</span>
         </div>
-        <input type="file" id="resumeFile" accept=".txt,.pdf" style="display:none">
+        <input type="file" id="resumeFile" accept=".txt,.pdf,.jpg,.jpeg,.png" style="display:none">
         <button class="rc-btn-primary" id="btnUpload" type="button">📤 Choose File</button>
       </div>
       <div id="parserStatus" class="rc-parser-status hidden"></div>
+      <div class="rc-ocr-progress" id="parserOCRProgress">
+        <span style="font-size:0.8rem;color:var(--ed-t3)">OCR scanning…</span>
+        <div class="rc-ocr-progress-bar-track"><div class="rc-ocr-progress-bar-fill"></div></div>
+      </div>
       <div id="parserPreview" class="rc-parser-preview hidden"></div>
     </div>
   </div>
@@ -389,6 +422,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <!-- pdf.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Tesseract.js (OCR for image resumes) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

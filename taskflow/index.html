@@ -19,6 +19,13 @@
 
   <main class="board-container">
     <div class="board-header">
+      <input type="text" id="task-search" class="task-search-input" placeholder="🔍 Search tasks…" autocomplete="off">
+      <select id="task-filter-priority" class="task-filter-select">
+        <option value="">All Priorities</option>
+        <option value="high">🔴 High</option>
+        <option value="medium">🟡 Medium</option>
+        <option value="low">🟢 Low</option>
+      </select>
       <button id="add-task-btn" class="btn btn-primary">＋ New Task</button>
     </div>
 

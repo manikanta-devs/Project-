@@ -167,6 +167,7 @@ body {
   border-bottom: 1px solid var(--ed-border);
 }
 .rc-editor__header-left {}
+.rc-editor__header-right { display: flex; align-items: center; gap: 8px; }
 .rc-editor__title  { font-size: 13px; font-weight: 700; color: var(--ed-t1); line-height: 1.2; }
 .rc-editor__sub    { font-size: 10.5px; color: var(--ed-t3); margin-top: 1px; }
 .rc-save-badge {
@@ -175,6 +176,77 @@ body {
   padding: 3px 8px; border-radius: 20px;
   transition: color .3s, background .3s;
   white-space: nowrap;
+}
+
+/* ── Import Resume quick-access button ─────────────────────── */
+.rc-btn-import {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  background: rgba(var(--accent-rgb),.15);
+  border: 1px solid rgba(var(--accent-rgb),.35);
+  color: #a5b4fc;
+  border-radius: var(--r);
+  font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+  transition: background .15s, color .15s;
+  font-family: var(--font);
+}
+.rc-btn-import:hover { background: rgba(var(--accent-rgb),.28); color: #c7d2fe; }
+
+/* ── Import overlay ─────────────────────────────────────────── */
+.rc-import-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.rc-import-overlay.hidden { display: none; }
+.rc-import-box {
+  background: var(--ed-card);
+  border: 1px solid var(--ed-border);
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.rc-import-box__header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.rc-import-box__header h3 { font-size: 1.1rem; font-weight: 700; color: var(--ed-t1); }
+.rc-import-close {
+  background: none; border: none; color: var(--ed-t3);
+  font-size: 1.1rem; cursor: pointer; padding: 4px; border-radius: 6px;
+  transition: color .15s;
+}
+.rc-import-close:hover { color: var(--ed-t1); }
+.rc-import-box__sub { font-size: 0.85rem; color: var(--ed-t2); margin-bottom: 20px; line-height: 1.6; }
+
+/* Make upload zone slightly compact inside modal */
+.rc-upload-zone--modal { padding: 28px 20px; }
+
+/* ── OCR progress bar ───────────────────────────────────────── */
+.rc-ocr-progress {
+  margin-top: 12px;
+  display: none;
+}
+.rc-ocr-progress.visible { display: block; }
+.rc-ocr-progress-bar-track {
+  height: 6px;
+  background: var(--ed-card2, #162032);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.rc-ocr-progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  width: 0%;
+  transition: width .2s ease;
 }
 
 /* ── 6. ACCORDION SECTIONS ───────────────────────────────────── */
