@@ -12,6 +12,7 @@
   <!-- ═══════════════════════════════════════════════════════════
        NAVBAR
        ═══════════════════════════════════════════════════════════ -->
+  <!-- ── Top Nav Bar ── -->
   <nav class="rc-nav" id="rcNav">
     <a href="../index.html" class="rc-nav__back">← Portfolio</a>
 
@@ -20,8 +21,8 @@
       <span class="rc-nav__name">ResumeCraft</span>
     </div>
 
-    <!-- ── Mode Tabs ── -->
-    <div class="rc-mode-tabs" id="modeTabs">
+    <!-- Mode tabs inline on desktop -->
+    <div class="rc-mode-tabs rc-mode-tabs--desktop" id="modeTabs">
       <button class="rc-mode-tab active" data-mode="resume">📄 Resume</button>
       <button class="rc-mode-tab" data-mode="coverletter">✉️ Cover Letter</button>
       <button class="rc-mode-tab" data-mode="parser">🔍 Parser</button>
@@ -84,6 +85,20 @@
 
     </div>
   </nav>
+
+  <!-- ── Mobile Mode Tabs (scrollable strip below nav) ── -->
+  <div class="rc-mode-tabs rc-mode-tabs--mobile" id="modeTabsMobile">
+    <button class="rc-mode-tab active" data-mode="resume">📄 Resume</button>
+    <button class="rc-mode-tab" data-mode="coverletter">✉️ Cover Letter</button>
+    <button class="rc-mode-tab" data-mode="parser">🔍 Parser</button>
+    <button class="rc-mode-tab" data-mode="ats">🎯 ATS</button>
+    <button class="rc-mode-tab" data-mode="improver">✍️ Improver</button>
+    <button class="rc-mode-tab" data-mode="dna">🧬 DNA</button>
+    <button class="rc-mode-tab" data-mode="predictor">📈 Predict</button>
+    <button class="rc-mode-tab" data-mode="voice">🎥 Voice</button>
+    <button class="rc-mode-tab" data-mode="portfolio">🌐 Portfolio</button>
+    <button class="rc-mode-tab" data-mode="skillgap">🧭 Skills</button>
+  </div>
 
   <!-- ═══════════════════════════════════════════════════════════
        RESUME MODE LAYOUT

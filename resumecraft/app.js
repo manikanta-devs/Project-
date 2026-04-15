@@ -1841,12 +1841,10 @@
       if (el) el.classList.toggle('hidden', MODE_LAYOUT_MAP[m] !== activeId);
     });
 
-    var modeTabs = $('modeTabs');
-    if (modeTabs) {
-      modeTabs.querySelectorAll('.rc-mode-tab').forEach(function (btn) {
-        btn.classList.toggle('active', btn.dataset.mode === mode);
-      });
-    }
+    /* Sync active state on both desktop and mobile tab bars */
+    document.querySelectorAll('.rc-mode-tabs .rc-mode-tab').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
 
     var resumeCtrls = document.querySelectorAll('.rc-resume-ctrl');
     resumeCtrls.forEach(function (el) {
@@ -1857,11 +1855,12 @@
   }
 
   function initModeTabs() {
-    var modeTabs = $('modeTabs');
-    if (!modeTabs) return;
-    modeTabs.addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-mode]');
-      if (btn) switchMode(btn.dataset.mode);
+    /* Attach click listeners to both desktop and mobile tab containers */
+    document.querySelectorAll('.rc-mode-tabs').forEach(function (container) {
+      container.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-mode]');
+        if (btn) switchMode(btn.dataset.mode);
+      });
     });
   }
 

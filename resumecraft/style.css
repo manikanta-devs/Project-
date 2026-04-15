@@ -718,6 +718,7 @@ body {
   body { background: #fff; }
 
   .rc-nav,
+  .rc-mode-tabs--mobile,
   .rc-editor,
   .rc-preview__bar { display: none !important; }
 
@@ -742,6 +743,7 @@ body {
 
   /* Hide the mode that is not active */
   #resumeLayout.hidden, #clLayout.hidden { display: none !important; }
+  .rc-tool-layout { display: none !important; }
 }
 
 
@@ -767,8 +769,67 @@ body {
 .rc-mode-tab:hover   { color: var(--ed-t1); background: rgba(255,255,255,.07); }
 .rc-mode-tab.active  { background: var(--accent); color: #fff; }
 
+/* Desktop inline tabs shown, mobile strip hidden by default */
+.rc-mode-tabs--mobile {
+  display: none;
+}
+
 /* Hidden utility */
 .hidden { display: none !important; }
+
+/* ================================================================
+   MOBILE RESPONSIVE — NAVBAR & MODE TABS
+   ================================================================ */
+@media (max-width: 900px) {
+  /* Hide the inline desktop mode tabs */
+  .rc-mode-tabs--desktop { display: none !important; }
+
+  /* Show mobile mode tabs strip below nav */
+  .rc-mode-tabs--mobile {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(15,23,42,0.97);
+    border-bottom: 1px solid var(--ed-border);
+    padding: 6px 12px;
+    gap: 4px;
+    flex-shrink: 0;
+    z-index: 199;
+  }
+  .rc-mode-tabs--mobile::-webkit-scrollbar { display: none; }
+  .rc-mode-tabs--mobile .rc-mode-tab {
+    padding: 6px 14px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Wrap nav controls on smaller screens */
+  .rc-nav {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--nav-h);
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .rc-nav__controls {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .rc-nav__controls {
+    gap: 6px;
+  }
+  .rc-ctrl-label { display: none; }
+  .rc-ctrl-btn { padding: 4px 8px; font-size: 10.5px; }
+  .rc-swatch { width: 18px; height: 18px; }
+  .rc-btn-export { font-size: 12px; padding: 6px 12px; }
+}
 
 
 /* ================================================================
@@ -1191,14 +1252,14 @@ body {
 .rc-btn-secondary:hover { background: var(--ed-card); color: var(--ed-t1); }
 
 /* nav mode tabs — scrollable on small screens */
-.rc-mode-tabs {
+.rc-mode-tabs--desktop {
   display: flex;
   gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
   flex-shrink: 1;
 }
-.rc-mode-tabs::-webkit-scrollbar { display: none; }
+.rc-mode-tabs--desktop::-webkit-scrollbar { display: none; }
 
 /* Score colours — match existing rc-strength palette */
 .great { color: #10b981 !important; }
@@ -1772,4 +1833,21 @@ body {
   .rc-tool-left { border-right: none; border-bottom: 1px solid var(--ed-border); }
   .voice-scores { grid-template-columns: 1fr; }
   .voice-stats  { grid-template-columns: repeat(2, 1fr); }
+
+  /* Stack editor and preview vertically */
+  .rc-layout {
+    flex-direction: column;
+  }
+  .rc-editor {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid var(--ed-border);
+  }
+  .rc-preview {
+    border-left: none;
+    border-top: 1px solid var(--ed-border);
+  }
 }
