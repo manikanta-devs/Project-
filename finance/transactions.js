@@ -229,7 +229,44 @@ function confirmDelete() {
   }
 }
 
-// ── Toast ─────────────────────────────────────────────────
+// ── CSV Export ────────────────────────────────────────────
+function exportCSV() {
+  const search   = document.getElementById('f-search').value.trim();
+  const type     = document.getElementById('f-type').value;
+  const category = document.getElementById('f-category').value;
+  const sortBy   = document.getElementById('f-sort').value;
+
+  const txs = PFT.getTransactions({
+    month: currentMonth,
+    search: search || undefined,
+    type: type || undefined,
+    category: category || undefined,
+    sortBy
+  });
+
+  if (!txs.length) { showToast('No transactions to export.', 'warning'); return; }
+
+  const headers = ['Date', 'Description', 'Category', 'Type', 'Amount'];
+  const rows = txs.map(t => [
+    t.date,
+    '"' + (t.description || '').replace(/"/g, '""') + '"',
+    '"' + (t.category || '').replace(/"/g, '""') + '"',
+    t.type,
+    t.type === 'income' ? t.amount : -t.amount
+  ]);
+
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `fintrack-${currentMonth}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  showToast(`Exported ${txs.length} transactions as CSV.`, 'success');
+}
 function showToast(msg, type = 'info') {
   const container = document.getElementById('toast-container');
   const el = document.createElement('div');

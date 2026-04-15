@@ -1841,12 +1841,10 @@
       if (el) el.classList.toggle('hidden', MODE_LAYOUT_MAP[m] !== activeId);
     });
 
-    var modeTabs = $('modeTabs');
-    if (modeTabs) {
-      modeTabs.querySelectorAll('.rc-mode-tab').forEach(function (btn) {
-        btn.classList.toggle('active', btn.dataset.mode === mode);
-      });
-    }
+    /* Sync active state on both desktop and mobile tab bars */
+    document.querySelectorAll('.rc-mode-tabs .rc-mode-tab').forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
 
     var resumeCtrls = document.querySelectorAll('.rc-resume-ctrl');
     resumeCtrls.forEach(function (el) {
@@ -1857,16 +1855,18 @@
   }
 
   function initModeTabs() {
-    var modeTabs = $('modeTabs');
-    if (!modeTabs) return;
-    modeTabs.addEventListener('click', function (e) {
-      var btn = e.target.closest('[data-mode]');
-      if (btn) switchMode(btn.dataset.mode);
+    /* Attach click listeners to both desktop and mobile tab containers */
+    document.querySelectorAll('.rc-mode-tabs').forEach(function (container) {
+      container.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-mode]');
+        if (btn) switchMode(btn.dataset.mode);
+      });
     });
   }
 
   /* ══════════════════════════════════════════════════════════════
-   *  FEATURE 1 — RESUME PARSER
+   *  FEATURE 1 — RESUME PARSER  (PDF · Image OCR · TXT)
+   *  + QUICK IMPORT from Resume Editor header button
    * ══════════════════════════════════════════════════════════════ */
   function initParser() {
     if (typeof window.pdfjsLib !== 'undefined') {
@@ -1874,93 +1874,231 @@
         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
 
-    var btn       = $('btnUpload');
-    var fileInput = $('resumeFile');
-    var zone      = $('uploadZone');
+    /* ── Parser tab upload zone ─────────────────────────────── */
+    bindUploadZone('btnUpload', 'resumeFile', 'uploadZone', 'parserStatus', 'parserPreview', false);
 
-    if (btn && fileInput) {
-      btn.addEventListener('click', function () { fileInput.click(); });
-      fileInput.addEventListener('change', function (e) {
+    /* ── Quick-import overlay (from editor header button) ───── */
+    var btnQuick = $('btnQuickImport');
+    var overlay  = $('importOverlay');
+    var btnClose = $('btnImportClose');
+
+    if (btnQuick && overlay) {
+      btnQuick.addEventListener('click', function () {
+        overlay.classList.remove('hidden');
+        /* Reset inner state */
+        var st = $('quickImportStatus');
+        var pv = $('quickImportPreview');
+        var fi = $('quickResumeFile');
+        if (st) st.classList.add('hidden');
+        if (pv) pv.classList.add('hidden');
+        if (fi) fi.value = '';
+      });
+    }
+    if (btnClose && overlay) {
+      btnClose.addEventListener('click', function () { overlay.classList.add('hidden'); });
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) overlay.classList.add('hidden');
+      });
+    }
+
+    bindUploadZone('btnQuickChoose', 'quickResumeFile', 'quickUploadZone', 'quickImportStatus', 'quickImportPreview', true);
+  }
+
+  /* Bind upload button + file input + drag-drop zone.
+     isModal = true  → also close overlay after applying */
+  function bindUploadZone(btnId, inputId, zoneId, statusId, previewId, isModal) {
+    var btn   = $(btnId);
+    var input = $(inputId);
+    var zone  = $(zoneId);
+
+    if (btn && input) {
+      btn.addEventListener('click', function () { input.click(); });
+      input.addEventListener('change', function (e) {
         var file = e.target.files[0];
         if (!file) return;
-        var ext = file.name.split('.').pop().toLowerCase();
-        if (ext === 'txt') { parseTxtFile(file); }
-        else if (ext === 'pdf') { parsePdfFile(file); }
-        else { setParserStatus('Unsupported file type. Please use .txt or .pdf', 'error'); }
-        fileInput.value = '';
+        handleResumeFile(file, statusId, previewId, isModal);
+        input.value = '';
       });
     }
 
     if (zone) {
-      zone.addEventListener('dragover', function (e) {
-        e.preventDefault();
-        zone.classList.add('dragover');
-      });
-      zone.addEventListener('dragleave', function () {
-        zone.classList.remove('dragover');
-      });
+      zone.addEventListener('dragover', function (e) { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', function () { zone.classList.remove('dragover'); });
       zone.addEventListener('drop', function (e) {
         e.preventDefault();
         zone.classList.remove('dragover');
         var file = e.dataTransfer.files[0];
-        if (!file) return;
-        var ext = file.name.split('.').pop().toLowerCase();
-        if (ext === 'txt') { parseTxtFile(file); }
-        else if (ext === 'pdf') { parsePdfFile(file); }
+        if (file) handleResumeFile(file, statusId, previewId, isModal);
+      });
+      /* Click anywhere on zone except the button */
+      zone.addEventListener('click', function (e) {
+        if (!e.target.closest('button')) input && input.click();
       });
     }
   }
 
-  function parseTxtFile(file) {
-    setParserStatus('Reading file…', 'info');
+  function handleResumeFile(file, statusId, previewId, isModal) {
+    var ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'txt') {
+      parseTxtFile(file, statusId, previewId, isModal);
+    } else if (ext === 'pdf') {
+      parsePdfFile(file, statusId, previewId, isModal);
+    } else if (ext === 'jpg' || ext === 'jpeg' || ext === 'png') {
+      parseImageFile(file, statusId, previewId, isModal);
+    } else {
+      setStatus(statusId, '❌ Unsupported format. Please use PDF, JPG, PNG, or TXT.', 'error');
+    }
+  }
+
+  function parseTxtFile(file, statusId, previewId, isModal) {
+    setStatus(statusId, '📄 Reading file…', 'info');
     var reader = new FileReader();
-    reader.onload = function (e) { parseResumeText(e.target.result); };
-    reader.onerror = function () { setParserStatus('Error reading file.', 'error'); };
+    reader.onload = function (e) { parseResumeText(e.target.result, statusId, previewId, isModal); };
+    reader.onerror = function () { setStatus(statusId, '❌ Error reading file.', 'error'); };
     reader.readAsText(file);
   }
 
-  function parsePdfFile(file) {
-    setParserStatus('Extracting text from PDF…', 'info');
+  function parsePdfFile(file, statusId, previewId, isModal) {
+    setStatus(statusId, '⏳ Extracting text from PDF…', 'info');
     var reader = new FileReader();
     reader.onload = function (e) {
       if (typeof window.pdfjsLib === 'undefined') {
-        setParserStatus('PDF library not loaded. Please try a .txt file.', 'error');
+        setStatus(statusId, '❌ PDF library not loaded yet. Try again in a moment.', 'error');
         return;
       }
       var loadingTask = window.pdfjsLib.getDocument({ data: e.target.result });
       loadingTask.promise.then(function (pdf) {
-        var promises = [];
+        var pagePromises = [];
         for (var i = 1; i <= pdf.numPages; i++) {
-          promises.push(
+          pagePromises.push(
             pdf.getPage(i).then(function (page) {
               return page.getTextContent().then(function (c) {
-                return c.items.map(function (it) { return it.str; }).join(' ');
+                /* Reconstruct lines using y-position grouping for better parsing */
+                var items = c.items;
+                var lines = {};
+                items.forEach(function (it) {
+                  var y = Math.round(it.transform[5]);
+                  if (!lines[y]) lines[y] = [];
+                  lines[y].push(it.str);
+                });
+                return Object.keys(lines)
+                  .sort(function (a, b) { return Number(b) - Number(a); })
+                  .map(function (y) { return lines[y].join(' '); })
+                  .join('\n');
               });
             })
           );
         }
-        Promise.all(promises).then(function (pages) {
-          parseResumeText(pages.join('\n'));
+        Promise.all(pagePromises).then(function (pages) {
+          var text = pages.join('\n');
+          if (text.trim().length < 30) {
+            /* Scanned/image-based PDF — try OCR on the first page */
+            setStatus(statusId, '🔍 PDF appears to be scanned — trying OCR…', 'info');
+            extractPdfPageAsImage(file, statusId, previewId, isModal);
+          } else {
+            parseResumeText(text, statusId, previewId, isModal);
+          }
         });
-      }).catch(function () {
-        setParserStatus('Could not parse PDF. Try saving your resume as plain text (.txt) first.', 'error');
+      }).catch(function (err) {
+        setStatus(statusId, '❌ Could not read PDF. Try saving as .txt or use a JPG/PNG screenshot.', 'error');
       });
     };
     reader.readAsArrayBuffer(file);
   }
 
-  function setParserStatus(msg, type) {
-    var el = $('parserStatus');
+  function extractPdfPageAsImage(file, statusId, previewId, isModal) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var loadingTask = window.pdfjsLib.getDocument({ data: e.target.result });
+      loadingTask.promise.then(function (pdf) {
+        pdf.getPage(1).then(function (page) {
+          var scale = 2;
+          var viewport = page.getViewport({ scale: scale });
+          var canvas = document.createElement('canvas');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          var ctx = canvas.getContext('2d');
+          page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function () {
+            canvas.toBlob(function (blob) {
+              runOCR(blob, statusId, previewId, isModal);
+            }, 'image/png');
+          });
+        });
+      }).catch(function () {
+        setStatus(statusId, '❌ Could not render PDF page for OCR.', 'error');
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function parseImageFile(file, statusId, previewId, isModal) {
+    setStatus(statusId, '🔍 Running OCR on image… this may take 10–30 seconds.', 'info');
+    showOCRProgress(statusId, 0);
+    runOCR(file, statusId, previewId, isModal);
+  }
+
+  function showOCRProgress(statusId, pct) {
+    var progressId = statusId === 'parserStatus' ? 'parserOCRProgress' : 'quickImportOCRProgress';
+    var progressEl = $(progressId);
+    if (!progressEl) return;
+    progressEl.classList.toggle('visible', pct < 100);
+    var fill = progressEl.querySelector('.rc-ocr-progress-bar-fill');
+    if (fill) fill.style.width = pct + '%';
+  }
+
+  function runOCR(imageFile, statusId, previewId, isModal) {
+    if (typeof window.Tesseract === 'undefined') {
+      setStatus(statusId, '❌ OCR library not available. Try a PDF or TXT file.', 'error');
+      return;
+    }
+    window.Tesseract.recognize(imageFile, 'eng', {
+      logger: function (m) {
+        if (m.status === 'recognizing text') {
+          var pct = Math.round((m.progress || 0) * 100);
+          setStatus(statusId, '🔍 OCR progress: ' + pct + '%…', 'info');
+          showOCRProgress(statusId, pct);
+        }
+      }
+    }).then(function (result) {
+      showOCRProgress(statusId, 100);
+      var text = result.data.text;
+      if (text.trim().length < 20) {
+        setStatus(statusId, '⚠️ OCR could not read the image clearly. Try a higher-quality scan.', 'error');
+        return;
+      }
+      parseResumeText(text, statusId, previewId, isModal);
+    }).catch(function (err) {
+      setStatus(statusId, '❌ OCR failed: ' + (err.message || 'unknown error'), 'error');
+    });
+  }
+
+  /* ── Central status setter (works for both parser tab and modal) */
+  function setStatus(id, msg, type) {
+    var el = $(id);
     if (!el) return;
     el.textContent = msg;
     el.className = 'rc-parser-status rc-parser-status--' + type;
     el.classList.remove('hidden');
   }
 
-  function parseResumeText(text) {
-    var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
-    var extracted = { name:'', email:'', phone:'', location:'', linkedin:'', website:'', summary:'', skills:[] };
+  /* Legacy wrapper kept for ATS / other callers */
+  function setParserStatus(msg, type) { setStatus('parserStatus', msg, type); }
 
+  /* ── Advanced resume text parser ───────────────────────────── */
+  function parseResumeText(text, statusId, previewId, isModal) {
+    statusId  = statusId  || 'parserStatus';
+    previewId = previewId || 'parserPreview';
+
+    setStatus(statusId, '🧠 Parsing resume…', 'info');
+
+    var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var extracted = {
+      name: '', jobTitle: '', email: '', phone: '', location: '',
+      linkedin: '', website: '', summary: '',
+      skills: [], experience: [], education: []
+    };
+
+    /* ── Contact info ────────────────────────────────────────── */
     var emailMatch = text.match(/[\w.+\-]+@[\w\-]+\.[a-zA-Z]{2,}/);
     if (emailMatch) extracted.email = emailMatch[0];
 
@@ -1970,104 +2108,291 @@
     var liMatch = text.match(/linkedin\.com\/in\/[\w\-]+/i);
     if (liMatch) extracted.linkedin = liMatch[0];
 
-    var webMatch = text.match(/(?:https?:\/\/)?(?:www\.)?[\w\-]+\.(?:com|io|dev|me|co|net|org)(?:\/[\w\-]*)?/i);
-    if (webMatch && !webMatch[0].toLowerCase().includes('linkedin')) extracted.website = webMatch[0];
-
-    for (var i = 0; i < Math.min(5, lines.length); i++) {
-      if (!lines[i].match(/[@/\\()\d|·•:]/)) { extracted.name = lines[i]; break; }
+    var webMatch = text.match(/(?:https?:\/\/)?(?:www\.)?[\w\-]+\.(?:com|io|dev|me|co|net|org)(?:\/[\w\-]*)?/ig);
+    if (webMatch) {
+      var site = webMatch.filter(function (u) { return u.toLowerCase().indexOf('linkedin') === -1; })[0];
+      if (site) extracted.website = site;
     }
 
-    var sectionRe = {
-      summary:    /^(summary|profile|objective|about\s*me|professional\s*summary)/i,
-      skills:     /^(skills?|technical\s*skills?|core\s*competenc|key\s*skills?|technologies)/i,
-      experience: /^(experience|work\s*experience|employment|work\s*history|professional\s*experience)/i
-    };
-    var curSec = null;
-    var secContent = { summary:[], skills:[], experience:[] };
-    lines.forEach(function (line) {
-      for (var sec in sectionRe) {
-        if (sectionRe[sec].test(line) && line.length < 45) { curSec = sec; return; }
+    /* ── Name — first non-contact line, max 40 chars ─────────── */
+    for (var i = 0; i < Math.min(6, lines.length); i++) {
+      var l = lines[i];
+      if (!l.match(/[@/\\()\d|·•:,]/) && l.length < 42 && l.split(' ').length <= 5) {
+        extracted.name = l;
+        /* Next line often holds Job Title */
+        if (i + 1 < lines.length) {
+          var next = lines[i + 1];
+          if (!next.match(/[@/\\()\d|·•:]/) && next.length < 60 && next.split(' ').length <= 7) {
+            extracted.jobTitle = next;
+          }
+        }
+        break;
       }
-      if (curSec && secContent[curSec]) secContent[curSec].push(line);
+    }
+
+    /* ── Location (city/state/country patterns) ──────────────── */
+    var locMatch = text.match(/\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)*,\s*(?:[A-Z]{2}|[A-Z][a-z]+))\b/);
+    if (locMatch) extracted.location = locMatch[1];
+
+    /* ── Section detection ───────────────────────────────────── */
+    var SECTION_RE = {
+      summary:    /^(summary|profile|objective|about\s*me|professional\s*summary|career\s*objective)/i,
+      skills:     /^(skills?|technical\s*skills?|core\s*competenc|key\s*skills?|technologies|competencies|tools)/i,
+      experience: /^(experience|work\s*experience|employment|work\s*history|professional\s*experience|career\s*history)/i,
+      education:  /^(education|academic|qualification|degree|schooling|university|college)/i,
+      projects:   /^(projects?|personal\s*projects?|portfolio|side\s*projects?)/i
+    };
+
+    var curSec = null;
+    var secLines = { summary: [], skills: [], experience: [], education: [], projects: [] };
+
+    lines.forEach(function (line) {
+      /* Detect section headings: short lines (<50 chars) matching keywords */
+      for (var sec in SECTION_RE) {
+        if (SECTION_RE[sec].test(line) && line.length < 50) {
+          curSec = sec;
+          return;
+        }
+      }
+      if (curSec) secLines[curSec].push(line);
     });
 
-    if (secContent.summary.length) extracted.summary = secContent.summary.slice(0, 4).join(' ').slice(0, 250);
+    /* ── Summary ─────────────────────────────────────────────── */
+    if (secLines.summary.length) {
+      extracted.summary = secLines.summary.slice(0, 5).join(' ').slice(0, 250);
+    }
 
-    var skillsText = secContent.skills.join(', ');
-    extracted.skills = skillsText.split(/[,•|\n\/]/)
-      .map(function (s) { return s.replace(/^\s*[-–]\s*/, '').trim(); })
-      .filter(function (s) { return s.length > 1 && s.length < 35; })
-      .slice(0, 20);
+    /* ── Skills ──────────────────────────────────────────────── */
+    var skillsRaw = secLines.skills.join(' , ');
+    extracted.skills = skillsRaw.split(/[,•|\n\/·]/)
+      .map(function (s) { return s.replace(/^\s*[-–▪•]\s*/, '').trim(); })
+      .filter(function (s) { return s.length > 1 && s.length < 40; })
+      .slice(0, 25);
 
-    showParserPreview(extracted);
+    /* ── Experience ──────────────────────────────────────────── */
+    extracted.experience = parseExperienceSection(secLines.experience);
+
+    /* ── Education ───────────────────────────────────────────── */
+    extracted.education = parseEducationSection(secLines.education);
+
+    showParserPreview(extracted, statusId, previewId, isModal);
   }
 
-  function showParserPreview(data) {
-    var container = $('parserPreview');
-    if (!container) return;
-    var skillsPrev = data.skills.slice(0, 5).join(', ') + (data.skills.length > 5 ? '…' : '');
-    var count = ['name','email','phone','linkedin','website','summary'].filter(function (k) { return data[k]; }).length + (data.skills.length ? 1 : 0);
+  /* Parse experience lines into structured entries */
+  function parseExperienceSection(lines) {
+    if (!lines.length) return [];
+    var entries = [];
+    var cur = null;
+    var bulletLines = [];
 
-    container.innerHTML =
+    var DATE_RE = /(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|\d{4})[a-z]*\.?\s*[\d]*\s*[-–—]\s*(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|\d{4}|present|current)/i;
+    var YEAR_RE  = /\b(19|20)\d{2}\b/;
+
+    function flushEntry() {
+      if (cur) {
+        if (bulletLines.length) cur.description = bulletLines.join('\n');
+        entries.push(cur);
+        cur = null;
+        bulletLines = [];
+      }
+    }
+
+    lines.forEach(function (line) {
+      var dateMatch = line.match(DATE_RE);
+      if (dateMatch) {
+        /* This line likely contains job title + company + dates */
+        flushEntry();
+        cur = { id: uid(), jobTitle: '', company: '', location: '', startDate: '', endDate: '', current: false, description: '' };
+        /* Try to extract date range */
+        var parts = dateMatch[0].split(/[-–—]/);
+        cur.startDate = (parts[0] || '').trim();
+        var endRaw = (parts[1] || '').trim();
+        cur.current = /present|current/i.test(endRaw);
+        cur.endDate = cur.current ? '' : endRaw;
+
+        /* Rest of line = job title | company */
+        var remainder = line.replace(dateMatch[0], '').replace(/[|,·•]/g, ' ').trim();
+        var chunks = remainder.split(/\s{2,}|\t/).filter(Boolean);
+        cur.jobTitle = chunks[0] || '';
+        cur.company  = chunks[1] || '';
+      } else if (cur && (line.match(/^[•\-–▪*]/) || (line.length < 100 && !YEAR_RE.test(line) && !cur.jobTitle))) {
+        /* Bullet point */
+        bulletLines.push(line.replace(/^[\s•\-–*▪]+/, '').trim());
+      } else if (!cur && YEAR_RE.test(line)) {
+        /* Fallback: line has a year, treat as new entry */
+        flushEntry();
+        cur = { id: uid(), jobTitle: line.replace(YEAR_RE, '').trim().slice(0, 60), company: '', location: '', startDate: line.match(YEAR_RE)[0], endDate: '', current: false, description: '' };
+      } else if (cur && !cur.company && !line.match(/^[\s•\-–*▪]+/)) {
+        /* Second non-bullet line often = company */
+        if (!cur.company && line.length < 80) cur.company = line;
+        else bulletLines.push(line.replace(/^[\s•\-–*▪]+/, '').trim());
+      } else if (cur) {
+        bulletLines.push(line.replace(/^[\s•\-–*▪]+/, '').trim());
+      }
+    });
+    flushEntry();
+    return entries.slice(0, 6);
+  }
+
+  /* Parse education lines into structured entries */
+  function parseEducationSection(lines) {
+    if (!lines.length) return [];
+    var entries = [];
+    var cur = null;
+
+    var DEGREE_RE = /\b(b\.?s\.?c?|b\.?a\.?|m\.?s\.?|m\.?b\.?a\.?|ph\.?d\.?|bachelor|master|doctor|diploma|associate|b\.?tech|m\.?tech|b\.?e\.?|m\.?e\.?)/i;
+    var YEAR_RE   = /\b(19|20)\d{2}\b/g;
+
+    lines.forEach(function (line) {
+      var isDegree = DEGREE_RE.test(line);
+      var years    = line.match(YEAR_RE);
+
+      if (isDegree || (years && !cur)) {
+        if (cur) entries.push(cur);
+        cur = { id: uid(), degree: '', institution: '', location: '', year: '', gpa: '' };
+        if (isDegree) {
+          cur.degree = line.slice(0, 80);
+        } else {
+          cur.institution = line.slice(0, 80);
+          if (years) cur.year = years[years.length - 1];
+        }
+      } else if (cur) {
+        if (!cur.institution && line.length < 80) {
+          cur.institution = line;
+          var y = line.match(YEAR_RE);
+          if (y) cur.year = y[y.length - 1];
+        } else if (!cur.year && years) {
+          cur.year = years[years.length - 1];
+        }
+        var gpaMatch = line.match(/gpa[:\s]+(\d\.\d+)/i);
+        if (gpaMatch) cur.gpa = gpaMatch[1];
+      }
+    });
+    if (cur) entries.push(cur);
+    return entries.slice(0, 4);
+  }
+
+  /* ── Preview card of extracted data ─────────────────────────── */
+  function showParserPreview(data, statusId, previewId, isModal) {
+    statusId  = statusId  || 'parserStatus';
+    previewId = previewId || 'parserPreview';
+
+    var container = $(previewId);
+    if (!container) return;
+
+    var skillsPrev = data.skills.slice(0, 5).join(', ') + (data.skills.length > 5 ? '…' : '');
+    var count = ['name','jobTitle','email','phone','location','linkedin','website','summary']
+      .filter(function (k) { return data[k]; }).length +
+      (data.skills.length ? 1 : 0) +
+      (data.experience.length ? 1 : 0) +
+      (data.education.length ? 1 : 0);
+
+    var html =
       '<div class="rc-parser-found">' +
-        '<h3 class="rc-parser-found-title">✅ ' + count + ' fields extracted</h3>' +
-        (data.name     ? pRow('Name',      data.name)    : '') +
-        (data.email    ? pRow('Email',     data.email)   : '') +
-        (data.phone    ? pRow('Phone',     data.phone)   : '') +
-        (data.linkedin ? pRow('LinkedIn',  data.linkedin): '') +
-        (data.website  ? pRow('Website',   data.website) : '') +
-        (data.summary  ? pRow('Summary',   data.summary.slice(0, 100) + (data.summary.length > 100 ? '…' : '')) : '') +
-        (data.skills.length ? pRow('Skills (' + data.skills.length + ')', skillsPrev) : '') +
+        '<h3 class="rc-parser-found-title">✅ ' + count + ' sections extracted</h3>' +
+        (data.name        ? pRow('👤 Name',       data.name)        : '') +
+        (data.jobTitle    ? pRow('💼 Job Title',   data.jobTitle)    : '') +
+        (data.email       ? pRow('📧 Email',       data.email)       : '') +
+        (data.phone       ? pRow('📞 Phone',       data.phone)       : '') +
+        (data.location    ? pRow('📍 Location',    data.location)    : '') +
+        (data.linkedin    ? pRow('🔗 LinkedIn',    data.linkedin)    : '') +
+        (data.website     ? pRow('🌐 Website',     data.website)     : '') +
+        (data.summary     ? pRow('📝 Summary',     data.summary.slice(0, 120) + (data.summary.length > 120 ? '…' : '')) : '') +
+        (data.skills.length ? pRow('⚡ Skills (' + data.skills.length + ')', skillsPrev) : '') +
+        (data.experience.length ? pRow('💼 Experience', data.experience.length + ' job' + (data.experience.length > 1 ? 's' : '') + ' detected') : '') +
+        (data.education.length  ? pRow('🎓 Education',  data.education.length  + ' entr' + (data.education.length > 1 ? 'ies' : 'y') + ' detected') : '') +
       '</div>' +
       '<div class="rc-parser-actions">' +
-        '<button class="rc-btn-primary" id="btnApplyParsed" type="button">✅ Apply to Resume Editor</button>' +
-        '<button class="rc-btn-secondary" id="btnDiscardParsed" type="button">✕ Discard</button>' +
+        '<button class="rc-btn-primary" id="btnApply_' + previewId + '" type="button">✅ Apply to Resume</button>' +
+        '<button class="rc-btn-secondary" id="btnDiscard_' + previewId + '" type="button">✕ Discard</button>' +
       '</div>';
+
+    container.innerHTML = html;
     container.classList.remove('hidden');
-    setParserStatus('Review the extracted data, then click Apply.', 'success');
+    setStatus(statusId, '✅ Review the extracted data, then click Apply.', 'success');
 
     container._parsedData = data;
-    $('btnApplyParsed').addEventListener('click', function () { applyParsedData(container._parsedData); });
-    $('btnDiscardParsed').addEventListener('click', function () {
-      container.classList.add('hidden');
-      $('parserStatus').classList.add('hidden');
-    });
+
+    var applyBtn   = $('btnApply_'   + previewId);
+    var discardBtn = $('btnDiscard_' + previewId);
+
+    if (applyBtn) {
+      applyBtn.addEventListener('click', function () {
+        applyParsedData(container._parsedData);
+        container.classList.add('hidden');
+        setStatus(statusId, '🎉 Resume data applied! Your fields are now populated.', 'success');
+        if (isModal) {
+          /* Close overlay and switch to resume editor */
+          var overlay = $('importOverlay');
+          if (overlay) overlay.classList.add('hidden');
+          switchMode('resume');
+          /* Scroll editor to top */
+          var scroll = document.querySelector('.rc-editor__scroll');
+          if (scroll) scroll.scrollTop = 0;
+        }
+      });
+    }
+    if (discardBtn) {
+      discardBtn.addEventListener('click', function () {
+        container.classList.add('hidden');
+        var st = $(statusId);
+        if (st) st.classList.add('hidden');
+      });
+    }
   }
 
   function pRow(label, value) {
-    return '<div class="rc-prow"><span class="rc-prow-label">' + esc(label) + '</span><span class="rc-prow-value">' + esc(value) + '</span></div>';
+    return '<div class="rc-prow"><span class="rc-prow-label">' + label + '</span><span class="rc-prow-value">' + esc(value) + '</span></div>';
   }
 
   function applyParsedData(data) {
-    var personalMap = { name:'name', email:'email', phone:'phone', linkedin:'linkedin', website:'website' };
-    Object.keys(personalMap).forEach(function (k) {
+    /* Personal info */
+    var pMap = { name:'name', jobTitle:'jobTitle', email:'email', phone:'phone', location:'location', linkedin:'linkedin', website:'website' };
+    Object.keys(pMap).forEach(function (k) {
       if (data[k]) {
         state.personal[k] = data[k];
         var el = $('f-personal-' + k);
         if (el) el.value = data[k];
       }
     });
+
+    /* Summary */
     if (data.summary) {
       state.summary = data.summary;
       var ta = $('summaryTA');
       if (ta) { ta.value = data.summary; updateSummaryCount(); }
     }
-    if (data.skills.length) {
+
+    /* Skills */
+    if (data.skills && data.skills.length) {
       data.skills.forEach(function (name) {
         if (!name) return;
-        var exists = false;
-        for (var i = 0; i < state.skills.length; i++) {
-          if (state.skills[i].name.toLowerCase() === name.toLowerCase()) { exists = true; break; }
-        }
+        var exists = state.skills.some(function (s) { return s.name.toLowerCase() === name.toLowerCase(); });
         if (!exists) state.skills.push({ id: uid(), name: name, level: 'Intermediate' });
       });
       renderSkillsChips();
     }
+
+    /* Experience */
+    if (data.experience && data.experience.length) {
+      data.experience.forEach(function (exp) {
+        state.experience.push(exp);
+        entryExpanded[exp.id] = false;
+      });
+      renderExperienceList();
+    }
+
+    /* Education */
+    if (data.education && data.education.length) {
+      data.education.forEach(function (edu) {
+        state.education.push(edu);
+        entryExpanded[edu.id] = false;
+      });
+      renderEducationList();
+    }
+
     saveState();
     updatePreview();
-    setParserStatus('✅ Data applied! Switch to the Resume tab to review.', 'success');
-    var prev = $('parserPreview');
-    if (prev) prev.classList.add('hidden');
   }
 
   /* ══════════════════════════════════════════════════════════════

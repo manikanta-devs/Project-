@@ -167,6 +167,7 @@ body {
   border-bottom: 1px solid var(--ed-border);
 }
 .rc-editor__header-left {}
+.rc-editor__header-right { display: flex; align-items: center; gap: 8px; }
 .rc-editor__title  { font-size: 13px; font-weight: 700; color: var(--ed-t1); line-height: 1.2; }
 .rc-editor__sub    { font-size: 10.5px; color: var(--ed-t3); margin-top: 1px; }
 .rc-save-badge {
@@ -175,6 +176,77 @@ body {
   padding: 3px 8px; border-radius: 20px;
   transition: color .3s, background .3s;
   white-space: nowrap;
+}
+
+/* ── Import Resume quick-access button ─────────────────────── */
+.rc-btn-import {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  background: rgba(var(--accent-rgb),.15);
+  border: 1px solid rgba(var(--accent-rgb),.35);
+  color: #a5b4fc;
+  border-radius: var(--r);
+  font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+  transition: background .15s, color .15s;
+  font-family: var(--font);
+}
+.rc-btn-import:hover { background: rgba(var(--accent-rgb),.28); color: #c7d2fe; }
+
+/* ── Import overlay ─────────────────────────────────────────── */
+.rc-import-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.rc-import-overlay.hidden { display: none; }
+.rc-import-box {
+  background: var(--ed-card);
+  border: 1px solid var(--ed-border);
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.rc-import-box__header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.rc-import-box__header h3 { font-size: 1.1rem; font-weight: 700; color: var(--ed-t1); }
+.rc-import-close {
+  background: none; border: none; color: var(--ed-t3);
+  font-size: 1.1rem; cursor: pointer; padding: 4px; border-radius: 6px;
+  transition: color .15s;
+}
+.rc-import-close:hover { color: var(--ed-t1); }
+.rc-import-box__sub { font-size: 0.85rem; color: var(--ed-t2); margin-bottom: 20px; line-height: 1.6; }
+
+/* Make upload zone slightly compact inside modal */
+.rc-upload-zone--modal { padding: 28px 20px; }
+
+/* ── OCR progress bar ───────────────────────────────────────── */
+.rc-ocr-progress {
+  margin-top: 12px;
+  display: none;
+}
+.rc-ocr-progress.visible { display: block; }
+.rc-ocr-progress-bar-track {
+  height: 6px;
+  background: var(--ed-card2, #162032);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.rc-ocr-progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  width: 0%;
+  transition: width .2s ease;
 }
 
 /* ── 6. ACCORDION SECTIONS ───────────────────────────────────── */
@@ -718,6 +790,7 @@ body {
   body { background: #fff; }
 
   .rc-nav,
+  .rc-mode-tabs--mobile,
   .rc-editor,
   .rc-preview__bar { display: none !important; }
 
@@ -742,6 +815,7 @@ body {
 
   /* Hide the mode that is not active */
   #resumeLayout.hidden, #clLayout.hidden { display: none !important; }
+  .rc-tool-layout { display: none !important; }
 }
 
 
@@ -767,8 +841,67 @@ body {
 .rc-mode-tab:hover   { color: var(--ed-t1); background: rgba(255,255,255,.07); }
 .rc-mode-tab.active  { background: var(--accent); color: #fff; }
 
+/* Desktop inline tabs shown, mobile strip hidden by default */
+.rc-mode-tabs--mobile {
+  display: none;
+}
+
 /* Hidden utility */
 .hidden { display: none !important; }
+
+/* ================================================================
+   MOBILE RESPONSIVE — NAVBAR & MODE TABS
+   ================================================================ */
+@media (max-width: 900px) {
+  /* Hide the inline desktop mode tabs */
+  .rc-mode-tabs--desktop { display: none !important; }
+
+  /* Show mobile mode tabs strip below nav */
+  .rc-mode-tabs--mobile {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(15,23,42,0.97);
+    border-bottom: 1px solid var(--ed-border);
+    padding: 6px 12px;
+    gap: 4px;
+    flex-shrink: 0;
+    z-index: 199;
+  }
+  .rc-mode-tabs--mobile::-webkit-scrollbar { display: none; }
+  .rc-mode-tabs--mobile .rc-mode-tab {
+    padding: 6px 14px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Wrap nav controls on smaller screens */
+  .rc-nav {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--nav-h);
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .rc-nav__controls {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .rc-nav__controls {
+    gap: 6px;
+  }
+  .rc-ctrl-label { display: none; }
+  .rc-ctrl-btn { padding: 4px 8px; font-size: 10.5px; }
+  .rc-swatch { width: 18px; height: 18px; }
+  .rc-btn-export { font-size: 12px; padding: 6px 12px; }
+}
 
 
 /* ================================================================
@@ -1191,14 +1324,14 @@ body {
 .rc-btn-secondary:hover { background: var(--ed-card); color: var(--ed-t1); }
 
 /* nav mode tabs — scrollable on small screens */
-.rc-mode-tabs {
+.rc-mode-tabs--desktop {
   display: flex;
   gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
   flex-shrink: 1;
 }
-.rc-mode-tabs::-webkit-scrollbar { display: none; }
+.rc-mode-tabs--desktop::-webkit-scrollbar { display: none; }
 
 /* Score colours — match existing rc-strength palette */
 .great { color: #10b981 !important; }
@@ -1772,4 +1905,21 @@ body {
   .rc-tool-left { border-right: none; border-bottom: 1px solid var(--ed-border); }
   .voice-scores { grid-template-columns: 1fr; }
   .voice-stats  { grid-template-columns: repeat(2, 1fr); }
+
+  /* Stack editor and preview vertically */
+  .rc-layout {
+    flex-direction: column;
+  }
+  .rc-editor {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid var(--ed-border);
+  }
+  .rc-preview {
+    border-left: none;
+    border-top: 1px solid var(--ed-border);
+  }
 }

@@ -96,8 +96,42 @@ body {
 .board-header {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 1.25rem;
+  flex-wrap: wrap;
 }
+
+.task-search-input {
+  flex: 1;
+  min-width: 160px;
+  max-width: 320px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color .15s;
+}
+.task-search-input:focus { border-color: var(--primary); }
+.task-search-input::placeholder { color: var(--text-muted); }
+
+.task-filter-select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: var(--font);
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s;
+}
+.task-filter-select:focus { border-color: var(--primary); }
 
 .board {
   display: grid;

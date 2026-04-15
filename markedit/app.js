@@ -15,12 +15,14 @@
     var notesList = document.getElementById('notes-list');
     var wordCountEl = document.getElementById('word-count');
     var charCountEl = document.getElementById('char-count');
+    var readTimeEl  = document.getElementById('read-time');
     var toastContainer = document.getElementById('toast-container');
     var sidebar = document.getElementById('sidebar');
 
     // Buttons
     var btnNewNote = document.getElementById('btn-new-note');
     var btnExport = document.getElementById('btn-export');
+    var btnExportHTML = document.getElementById('btn-export-html');
     var btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
     var btnViewEditor = document.getElementById('btn-view-editor');
     var btnViewPreview = document.getElementById('btn-view-preview');
@@ -327,8 +329,10 @@
     function updateCounts(text) {
         var charCount = text.length;
         var wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+        var readMin = Math.max(1, Math.ceil(wordCount / 200));
         wordCountEl.textContent = wordCount + ' word' + (wordCount !== 1 ? 's' : '');
         charCountEl.textContent = charCount + ' char' + (charCount !== 1 ? 's' : '');
+        if (readTimeEl) readTimeEl.textContent = readMin + ' min read';
     }
 
     // ===== Toast Notifications =====
@@ -368,6 +372,48 @@
         URL.revokeObjectURL(url);
 
         showToast('Note exported as ' + filename, 'success');
+    }
+
+    function exportNoteHTML() {
+        var note = getNoteById(state.activeNoteId);
+        if (!note) return;
+
+        var previewEl = document.getElementById('preview');
+        var htmlBody = previewEl ? previewEl.innerHTML : '<p>(empty)</p>';
+        var title = note.title || 'Untitled Note';
+
+        var fullHTML = '<!DOCTYPE html>\n<html lang="en">\n<head>\n' +
+            '<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n' +
+            '<title>' + title + '</title>\n' +
+            '<style>\n' +
+            'body{font-family:Georgia,serif;max-width:720px;margin:48px auto;padding:0 24px;color:#1e293b;line-height:1.75;}\n' +
+            'h1,h2,h3{font-family:system-ui,sans-serif;margin-top:2em;}\n' +
+            'code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:.9em;}\n' +
+            'pre{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto;}\n' +
+            'pre code{background:none;padding:0;color:inherit;}\n' +
+            'blockquote{border-left:4px solid #6366f1;margin:0;padding-left:16px;color:#64748b;}\n' +
+            'a{color:#6366f1;}\n' +
+            'img{max-width:100%;}\n' +
+            '</style>\n</head>\n<body>\n' +
+            '<h1>' + title + '</h1>\n' +
+            htmlBody + '\n' +
+            '<footer style="margin-top:48px;font-size:.8rem;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:12px;">Exported from MarkEdit · ' + new Date().toLocaleDateString() + '</footer>\n' +
+            '</body>\n</html>';
+
+        var filename = (note.title || 'note').replace(/[^a-z0-9_\- ]/gi, '').trim().replace(/\s+/g, '_') || 'note';
+        filename += '.html';
+
+        var blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('Exported as ' + filename, 'success');
     }
 
     // ===== Date Formatting =====
@@ -561,6 +607,7 @@
 
         // Export
         btnExport.addEventListener('click', exportNote);
+        if (btnExportHTML) btnExportHTML.addEventListener('click', exportNoteHTML);
 
         // Toggle sidebar
         btnToggleSidebar.addEventListener('click', function () {
