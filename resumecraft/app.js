@@ -1974,7 +1974,7 @@
     if (webMatch && !webMatch[0].toLowerCase().includes('linkedin')) extracted.website = webMatch[0];
 
     for (var i = 0; i < Math.min(5, lines.length); i++) {
-      if (!lines[i].match(/[@\/\\()\d\|·•:]/)) { extracted.name = lines[i]; break; }
+      if (!lines[i].match(/[@/\\()\d|·•:]/)) { extracted.name = lines[i]; break; }
     }
 
     var sectionRe = {
@@ -2074,7 +2074,7 @@
    *  FEATURE 2 + 6 — ATS SCORE CALCULATOR & JD TAILORING
    * ══════════════════════════════════════════════════════════════ */
   var STOPWORDS = (function () {
-    var sw = 'a an the and or but in on at to for of with by from as is was are were be been being have has had do does did will would could should may might shall can need must am i my we our you your they their it its this that these those not no nor so yet both either neither each few more most other some such than then there when where while who which what all any about up out if how her him his she he us them into over also just now only even still get very new first last other between back through during since before after under while our per etc ie eg'.split(' ');
+    var sw = 'a an the and or but in on at to for of with by from as is was are were be been being have has had do does did will would could should may might shall can need must am i my we our you your they their it its this that these those not no nor so yet both either neither each few more most some such than then there when where while who which what all any about up out if how her him his she he us them into over also just now only even still get very new first last between back through during since before after under per etc ie eg'.split(' ');
     var set = {};
     sw.forEach(function (w) { set[w] = true; });
     return set;
