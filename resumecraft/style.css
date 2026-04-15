@@ -726,7 +726,7 @@ body {
   .rc-preview__scroll { overflow: visible !important; height: auto !important; display: block !important; }
   .rc-a4-wrap      { padding: 0 !important; overflow: visible !important; display: block !important; background: #fff !important; }
 
-  #resumePreview {
+  #resumePreview, #clLetterPreview {
     box-shadow: none !important;
     border-radius: 0 !important;
     width: 210mm !important;
@@ -739,4 +739,357 @@ body {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+
+  /* Hide the mode that is not active */
+  #resumeLayout.hidden, #clLayout.hidden { display: none !important; }
 }
+
+
+/* ================================================================
+   MODE TABS
+   ================================================================ */
+.rc-mode-tabs {
+  display: flex; align-items: center; gap: 2px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--ed-border);
+  border-radius: var(--r-md);
+  padding: 3px;
+  flex-shrink: 0;
+}
+.rc-mode-tab {
+  padding: 5px 13px;
+  border: none; border-radius: var(--r);
+  background: transparent; color: var(--ed-t2);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: background .15s, color .15s;
+  font-family: var(--font); white-space: nowrap;
+}
+.rc-mode-tab:hover   { color: var(--ed-t1); background: rgba(255,255,255,.07); }
+.rc-mode-tab.active  { background: var(--accent); color: #fff; }
+
+/* Hidden utility */
+.hidden { display: none !important; }
+
+
+/* ================================================================
+   FONT FAMILY SELECTOR
+   ================================================================ */
+.rc-select-sm {
+  background: var(--ed-input); border: 1px solid var(--ed-border);
+  border-radius: var(--r); color: var(--ed-t1);
+  font-size: 11.5px; padding: 4px 7px;
+  cursor: pointer; font-family: var(--font);
+  transition: border-color .15s;
+  appearance: none; -webkit-appearance: none;
+  padding-right: 18px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 5px center;
+  max-width: 82px;
+}
+.rc-select-sm:hover  { border-color: var(--ed-bordh); }
+.rc-select-sm:focus  { outline: none; border-color: var(--accent); }
+
+/* Font family data attribute → apply to resume paper */
+#resumePreview[data-fontfamily="inter"]   { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+#resumePreview[data-fontfamily="georgia"] { font-family: Georgia, 'Times New Roman', serif; }
+#resumePreview[data-fontfamily="roboto"]  { font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
+#resumePreview[data-fontfamily="serif"]   { font-family: 'Times New Roman', Times, serif; }
+#resumePreview[data-fontfamily="mono"]    { font-family: 'Courier New', Courier, monospace; }
+
+
+/* ================================================================
+   RESUME STRENGTH METER
+   ================================================================ */
+.rc-strength-wrap {
+  margin: 0 0 14px;
+  padding: 11px 14px 10px;
+  background: var(--ed-card2);
+  border: 1px solid var(--ed-border);
+  border-radius: var(--r-md);
+}
+.rc-strength-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 6px;
+}
+.rc-strength-label { font-size: 11px; font-weight: 700; color: var(--ed-t2); text-transform: uppercase; letter-spacing: .06em; }
+.rc-strength-pct   { font-size: 12px; font-weight: 800; color: var(--ed-t3); }
+.rc-strength-pct.great { color: #10b981; }
+.rc-strength-pct.good  { color: #0ea5e9; }
+.rc-strength-pct.ok    { color: #f59e0b; }
+.rc-strength-pct.weak  { color: #f43f5e; }
+
+.rc-strength-track {
+  height: 6px; background: rgba(255,255,255,.07);
+  border-radius: 3px; overflow: hidden;
+}
+.rc-strength-fill {
+  height: 100%; width: 0;
+  border-radius: 3px;
+  transition: width .5s ease, background .4s ease;
+  background: #f43f5e;
+}
+.rc-strength-fill.ok   { background: #f59e0b; }
+.rc-strength-fill.good { background: #0ea5e9; }
+.rc-strength-fill.great{ background: #10b981; }
+
+.rc-strength-tips {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px;
+}
+.rc-strength-tip {
+  font-size: 10px; color: var(--ed-t3);
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--ed-border);
+  border-radius: 10px; padding: 2px 8px;
+}
+
+
+/* ================================================================
+   TEMPLATE 4 — PROFESSIONAL  (clean corporate)
+   ================================================================ */
+.tpl-professional {
+  padding: 44px 52px 44px;
+  font-family: inherit;
+  color: #1e293b;
+  min-height: 1122px;
+}
+
+.pro-header {
+  padding-bottom: 18px;
+  border-bottom: 3px solid var(--accent);
+  margin-bottom: 22px;
+}
+.pro-name {
+  font-size: 2.1em; font-weight: 800; color: #0f172a;
+  letter-spacing: -.025em; line-height: 1.1;
+  margin-bottom: 4px;
+}
+.pro-jobtitle {
+  font-size: .95em; font-weight: 500; color: var(--accent);
+  margin-bottom: 8px;
+}
+.pro-contact-bar {
+  font-size: .75em; color: #64748b;
+}
+.pro-sep { color: var(--accent); }
+
+.pro-section { margin-bottom: 18px; }
+.pro-heading {
+  font-size: .7em; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--accent);
+  border-left: 3px solid var(--accent);
+  padding-left: 8px;
+  margin-bottom: 10px;
+}
+
+.pro-exp-entry    { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+.pro-exp-entry:last-child { border-bottom: none; }
+.pro-exp-hd       { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.pro-exp-title    { font-size: .88em; font-weight: 700; color: #0f172a; }
+.pro-exp-co       { font-size: .78em; color: #64748b; margin-top: 1px; }
+.pro-exp-dates    { font-size: .74em; color: #94a3b8; white-space: nowrap; flex-shrink: 0; }
+.pro-bullets      { margin: 5px 0 0 14px; }
+.pro-bullets li   { font-size: .78em; color: #334155; margin-bottom: 2px; line-height: 1.45; }
+
+.pro-edu-entry    { margin-bottom: 9px; }
+.pro-edu-hd       { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.pro-edu-degree   { font-size: .86em; font-weight: 700; color: #0f172a; }
+.pro-edu-school   { font-size: .76em; color: #64748b; }
+.pro-edu-right    { display: flex; align-items: center; flex-shrink: 0; }
+.pro-edu-year     { font-size: .74em; color: #94a3b8; }
+.pro-edu-gpa      { font-size: .74em; color: #94a3b8; }
+
+.pro-skills-grid  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px 14px; }
+.pro-skill-item   { font-size: .79em; color: #334155; display: flex; align-items: center; gap: 6px; }
+.pro-skill-dot    { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+.pro-skill-lvl    { color: #94a3b8; font-size: .88em; }
+
+.pro-proj-entry   { margin-bottom: 9px; }
+.pro-proj-hd      { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pro-proj-name    { font-size: .85em; font-weight: 700; color: #0f172a; }
+.pro-proj-stack   { font-size: .72em; color: #fff; background: var(--accent); padding: 1px 7px; border-radius: 10px; }
+.pro-proj-url     { font-size: .72em; color: #94a3b8; }
+.pro-proj-desc    { font-size: .77em; color: #64748b; margin-top: 3px; }
+
+.pro-cert-list  { display: flex; flex-direction: column; gap: 7px; }
+.pro-cert-item  { display: flex; align-items: flex-start; gap: 8px; }
+.pro-cert-dot   { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.pro-cert-name  { font-size: .82em; font-weight: 700; color: #0f172a; }
+.pro-cert-sub   { font-size: .73em; color: #94a3b8; }
+
+.pro-summary    { font-size: .82em; color: #475569; line-height: 1.6; }
+
+
+/* ================================================================
+   TEMPLATE 5 — EXECUTIVE  (label-column, minimal elegance)
+   ================================================================ */
+.tpl-executive {
+  padding: 0;
+  font-family: inherit;
+  color: #1e293b;
+  min-height: 1122px;
+}
+
+.exec-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding: 36px 48px 26px;
+  background: var(--accent);
+  gap: 24px;
+}
+.exec-header-left { flex: 1; }
+.exec-name {
+  font-size: 2em; font-weight: 800; color: #fff;
+  letter-spacing: -.03em; line-height: 1.1;
+  margin-bottom: 5px;
+}
+.exec-jobtitle { font-size: .88em; color: rgba(255,255,255,.82); font-weight: 400; }
+
+.exec-header-right { flex-shrink: 0; }
+.exec-c-item   { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+.exec-c-label  { font-size: .63em; font-weight: 800; color: rgba(255,255,255,.6); text-transform: uppercase; letter-spacing: .08em; width: 52px; flex-shrink: 0; padding-top: 1px; }
+.exec-c-item > span:last-child { font-size: .72em; color: rgba(255,255,255,.9); word-break: break-all; }
+
+.exec-body { padding: 28px 48px 36px; }
+
+.exec-row {
+  display: flex; gap: 0;
+  padding: 14px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.exec-row:last-child { border-bottom: none; }
+.exec-label {
+  width: 100px; min-width: 100px;
+  font-size: .65em; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .09em;
+  color: var(--accent);
+  padding-top: 2px;
+}
+.exec-content { flex: 1; }
+
+.exec-summary { font-size: .81em; color: #475569; line-height: 1.65; }
+
+.exec-exp-entry    { margin-bottom: 11px; }
+.exec-exp-hd       { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.exec-exp-title    { font-size: .86em; font-weight: 700; color: #0f172a; }
+.exec-exp-dates    { font-size: .73em; color: #94a3b8; white-space: nowrap; flex-shrink: 0; }
+.exec-exp-co       { font-size: .76em; color: #64748b; margin: 1px 0 4px; }
+.exec-bullets      { margin: 4px 0 0 12px; }
+.exec-bullets li   { font-size: .77em; color: #334155; margin-bottom: 2px; line-height: 1.45; }
+
+.exec-edu-entry    { margin-bottom: 9px; }
+.exec-edu-hd       { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.exec-edu-degree   { font-size: .85em; font-weight: 700; color: #0f172a; }
+.exec-edu-year     { font-size: .73em; color: #94a3b8; flex-shrink: 0; }
+.exec-edu-school   { font-size: .75em; color: #64748b; margin-top: 1px; }
+
+.exec-skills-wrap  { display: flex; flex-wrap: wrap; gap: 5px; }
+.exec-skill        { font-size: .76em; color: #334155; background: #f1f5f9; border: 1px solid #e2e8f0; padding: 3px 9px; border-radius: 12px; }
+.exec-sk-expert    { background: rgba(var(--accent-rgb),.1); border-color: rgba(var(--accent-rgb),.25); color: var(--accent); font-weight: 600; }
+.exec-sk-beginner  { color: #94a3b8; border-style: dashed; }
+
+.exec-proj-entry   { margin-bottom: 8px; }
+.exec-proj-name    { font-size: .84em; font-weight: 700; color: #0f172a; }
+.exec-proj-stack   { font-size: .76em; color: #94a3b8; }
+.exec-proj-url     { font-size: .73em; color: #94a3b8; }
+.exec-proj-desc    { font-size: .76em; color: #64748b; margin-top: 3px; }
+
+.exec-cert-item    { margin-bottom: 6px; font-size: .8em; }
+.exec-cert-name    { font-weight: 700; color: #0f172a; }
+.exec-cert-issuer  { color: #64748b; }
+.exec-cert-year    { color: #94a3b8; }
+
+
+/* ================================================================
+   COVER LETTER — EDITOR
+   ================================================================ */
+.cl-tone-btns {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;
+}
+.cl-tone-btns .rc-ctrl-btn { font-size: 11.5px; }
+
+.cl-autofill-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 10px 14px; margin-top: 12px;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb),.15), rgba(var(--accent-rgb),.08));
+  border: 1px solid rgba(var(--accent-rgb),.35);
+  border-radius: var(--r-md);
+  color: var(--accent); font-size: 12.5px; font-weight: 700;
+  cursor: pointer; transition: background .18s, border-color .18s;
+  font-family: var(--font); gap: 6px;
+}
+.cl-autofill-btn:hover {
+  background: rgba(var(--accent-rgb),.22);
+  border-color: rgba(var(--accent-rgb),.55);
+}
+.cl-autofill-note {
+  font-size: 10.5px; color: var(--ed-t3);
+  text-align: center; margin-top: 6px;
+  line-height: 1.4;
+}
+
+.cl-textarea { min-height: 80px; resize: vertical; }
+
+
+/* ================================================================
+   COVER LETTER — A4 PREVIEW
+   ================================================================ */
+.tpl-coverletter {
+  display: flex; flex-direction: column;
+  min-height: 1122px;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #1e293b;
+  font-size: 1em;
+}
+
+.cl-header {
+  display: flex;
+  background: var(--accent);
+  padding: 32px 44px 28px;
+  gap: 0;
+  align-items: stretch;
+}
+.cl-header-stripe {
+  width: 4px; min-width: 4px;
+  background: rgba(255,255,255,.3);
+  border-radius: 2px;
+  margin-right: 18px;
+  flex-shrink: 0;
+}
+.cl-header-body   { flex: 1; }
+.cl-sender-name   { font-size: 1.45em; font-weight: 800; color: #fff; letter-spacing: -.02em; margin-bottom: 3px; font-family: inherit; }
+.cl-sender-title  { font-size: .83em; color: rgba(255,255,255,.8); margin-bottom: 6px; }
+.cl-sender-contact{ font-size: .73em; color: rgba(255,255,255,.72); margin-top: 2px; }
+
+.cl-body {
+  flex: 1; padding: 36px 44px 44px;
+  background: #fff;
+  display: flex; flex-direction: column; gap: 0;
+}
+
+.cl-date {
+  font-size: .8em; color: #64748b;
+  margin-bottom: 18px;
+}
+.cl-recipient {
+  font-size: .83em; color: #334155;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+.cl-salutation {
+  font-size: .88em; font-weight: 600; color: #0f172a;
+  margin-bottom: 16px;
+}
+.cl-para {
+  font-size: .84em; color: #334155;
+  line-height: 1.75; margin-bottom: 14px;
+  text-align: justify;
+}
+.cl-placeholder { color: #94a3b8; font-style: italic; text-align: left; }
+
+.cl-sign {
+  margin-top: 24px;
+  font-size: .84em; color: #334155;
+  line-height: 1.9;
+}
+.cl-sign-name { font-weight: 700; color: #0f172a; font-size: 1.05em; }

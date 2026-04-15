@@ -30,6 +30,7 @@
       template:    'modern',
       accentColor: '#6366f1',
       fontSize:    'medium',
+      fontFamily:  'inter',
       personal: {
         name: '', jobTitle: '', email: '',
         phone: '', location: '', linkedin: '', website: ''
@@ -467,14 +468,18 @@
     var el = $('resumePreview');
     if (!el) return;
     el.setAttribute('data-fontsize', state.fontSize);
+    el.setAttribute('data-fontfamily', state.fontFamily || 'inter');
     el.innerHTML = buildResumeHTML();
+    updateStrengthMeter();
   }, PREVIEW_DEBOUNCE);
 
   function buildResumeHTML() {
     switch (state.template) {
-      case 'classic': return buildClassicHTML();
-      case 'minimal': return buildMinimalHTML();
-      default:        return buildModernHTML();
+      case 'classic':      return buildClassicHTML();
+      case 'minimal':      return buildMinimalHTML();
+      case 'professional': return buildProfessionalHTML();
+      case 'executive':    return buildExecutiveHTML();
+      default:             return buildModernHTML();
     }
   }
 
@@ -921,6 +926,17 @@
     if (exportBtn) {
       exportBtn.addEventListener('click', function () { window.print(); });
     }
+
+    /* Font family select */
+    var ffSelect = $('fontFamilySelect');
+    if (ffSelect) {
+      ffSelect.addEventListener('change', function () {
+        state.fontFamily = ffSelect.value;
+        var el = $('resumePreview');
+        if (el) el.setAttribute('data-fontfamily', state.fontFamily);
+        saveState();
+      });
+    }
   }
 
   /* ── Editor: input / change ── */
@@ -1132,6 +1148,10 @@
         b.classList.toggle('active', b.dataset.size === state.fontSize);
       });
     }
+
+    /* Font family */
+    var ffSel = $('fontFamilySelect');
+    if (ffSel) ffSel.value = state.fontFamily || 'inter';
   }
 
   /* ──────────────────────────────────────────────────────────────
@@ -1159,6 +1179,8 @@
     bindEditor();
     bindSkillEnter();
     updatePreview();
+    initCoverLetter();
+    initModeTabs();
   }
 
   /* Run after DOM is ready */
@@ -1166,6 +1188,659 @@
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+   *  TEMPLATE: PROFESSIONAL  (clean corporate, left-accent rules)
+   * ──────────────────────────────────────────────────────────── */
+  function buildProfessionalHTML() {
+    var p = state.personal;
+
+    var cParts = [];
+    if (p.email)    cParts.push(esc(p.email));
+    if (p.phone)    cParts.push(esc(p.phone));
+    if (p.location) cParts.push(esc(p.location));
+    if (p.linkedin) cParts.push(esc(p.linkedin));
+    if (p.website)  cParts.push(esc(p.website));
+    var cBar = cParts.join('<span class="pro-sep"> · </span>');
+
+    var body = '';
+
+    if (state.summary) {
+      body += '<div class="pro-section">' +
+        '<h2 class="pro-heading">Professional Summary</h2>' +
+        '<p class="pro-summary">' + esc(state.summary) + '</p>' +
+      '</div>';
+    }
+
+    if (state.experience.length) {
+      body += '<div class="pro-section"><h2 class="pro-heading">Experience</h2>';
+      state.experience.forEach(function (exp) {
+        var dates = exp.current
+          ? esc(exp.startDate) + ' – Present'
+          : esc(exp.startDate) + (exp.endDate ? ' – ' + esc(exp.endDate) : '');
+        var company = [exp.company, exp.location].filter(Boolean).map(esc).join(' · ');
+        body +=
+          '<div class="pro-exp-entry">' +
+            '<div class="pro-exp-hd">' +
+              '<div>' +
+                '<div class="pro-exp-title">' + esc(exp.jobTitle) + '</div>' +
+                (company ? '<div class="pro-exp-co">' + company + '</div>' : '') +
+              '</div>' +
+              '<div class="pro-exp-dates">' + dates + '</div>' +
+            '</div>' +
+            buildBullets(exp.description, 'pro-bullets') +
+          '</div>';
+      });
+      body += '</div>';
+    }
+
+    if (state.education.length) {
+      body += '<div class="pro-section"><h2 class="pro-heading">Education</h2>';
+      state.education.forEach(function (edu) {
+        var school = [edu.institution, edu.location].filter(Boolean).map(esc).join(' · ');
+        body +=
+          '<div class="pro-edu-entry">' +
+            '<div class="pro-edu-hd">' +
+              '<div>' +
+                '<div class="pro-edu-degree">' + esc(edu.degree) + '</div>' +
+                (school ? '<div class="pro-edu-school">' + school + '</div>' : '') +
+              '</div>' +
+              '<div class="pro-edu-right">' +
+                '<span class="pro-edu-year">' + esc(edu.year) + '</span>' +
+                (edu.gpa ? '<span class="pro-edu-gpa"> · GPA ' + esc(edu.gpa) + '</span>' : '') +
+              '</div>' +
+            '</div>' +
+          '</div>';
+      });
+      body += '</div>';
+    }
+
+    if (state.skills.length) {
+      body += '<div class="pro-section"><h2 class="pro-heading">Core Competencies</h2>' +
+        '<div class="pro-skills-grid">';
+      state.skills.forEach(function (sk) {
+        var lvl = sk.level !== 'Intermediate' ? ' <span class="pro-skill-lvl">(' + esc(sk.level) + ')</span>' : '';
+        body += '<div class="pro-skill-item"><span class="pro-skill-dot"></span>' +
+          esc(sk.name) + lvl + '</div>';
+      });
+      body += '</div></div>';
+    }
+
+    if (state.projects.length) {
+      body += '<div class="pro-section"><h2 class="pro-heading">Projects</h2>';
+      state.projects.forEach(function (proj) {
+        body +=
+          '<div class="pro-proj-entry">' +
+            '<div class="pro-proj-hd">' +
+              '<span class="pro-proj-name">' + esc(proj.name) + '</span>' +
+              (proj.techStack ? '<span class="pro-proj-stack">' + esc(proj.techStack) + '</span>' : '') +
+              (proj.url ? '<span class="pro-proj-url">' + esc(proj.url) + '</span>' : '') +
+            '</div>' +
+            (proj.description ? '<div class="pro-proj-desc">' + esc(proj.description) + '</div>' : '') +
+          '</div>';
+      });
+      body += '</div>';
+    }
+
+    if (state.certifications.length) {
+      body += '<div class="pro-section"><h2 class="pro-heading">Certifications</h2>' +
+        '<div class="pro-cert-list">';
+      state.certifications.forEach(function (cert) {
+        var sub = [cert.issuer, cert.year].filter(Boolean).map(esc).join(' · ');
+        body += '<div class="pro-cert-item">' +
+          '<span class="pro-cert-dot"></span>' +
+          '<div><div class="pro-cert-name">' + esc(cert.name) + '</div>' +
+          (sub ? '<div class="pro-cert-sub">' + sub + '</div>' : '') +
+          '</div></div>';
+      });
+      body += '</div></div>';
+    }
+
+    return '<div class="tpl-professional">' +
+      '<div class="pro-header">' +
+        '<h1 class="pro-name">' + (esc(p.name) || 'Your Name') + '</h1>' +
+        (p.jobTitle ? '<div class="pro-jobtitle">' + esc(p.jobTitle) + '</div>' : '') +
+        (cBar ? '<div class="pro-contact-bar">' + cBar + '</div>' : '') +
+      '</div>' +
+      body +
+    '</div>';
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+   *  TEMPLATE: EXECUTIVE  (label-column layout)
+   * ──────────────────────────────────────────────────────────── */
+  function buildExecutiveHTML() {
+    var p = state.personal;
+
+    var contactItems = '';
+    if (p.email)    contactItems += execCI('Email',    p.email);
+    if (p.phone)    contactItems += execCI('Phone',    p.phone);
+    if (p.location) contactItems += execCI('Location', p.location);
+    if (p.linkedin) contactItems += execCI('LinkedIn', p.linkedin);
+    if (p.website)  contactItems += execCI('Website',  p.website);
+
+    var body = '';
+
+    if (state.summary) {
+      body += execRow('Profile',
+        '<p class="exec-summary">' + esc(state.summary) + '</p>');
+    }
+
+    if (state.experience.length) {
+      var expContent = '';
+      state.experience.forEach(function (exp) {
+        var dates = exp.current
+          ? esc(exp.startDate) + ' – Present'
+          : esc(exp.startDate) + (exp.endDate ? ' – ' + esc(exp.endDate) : '');
+        var company = [exp.company, exp.location].filter(Boolean).map(esc).join(', ');
+        expContent +=
+          '<div class="exec-exp-entry">' +
+            '<div class="exec-exp-hd">' +
+              '<span class="exec-exp-title">' + esc(exp.jobTitle) + '</span>' +
+              '<span class="exec-exp-dates">' + dates + '</span>' +
+            '</div>' +
+            (company ? '<div class="exec-exp-co">' + company + '</div>' : '') +
+            buildBullets(exp.description, 'exec-bullets') +
+          '</div>';
+      });
+      body += execRow('Experience', expContent);
+    }
+
+    if (state.education.length) {
+      var eduContent = '';
+      state.education.forEach(function (edu) {
+        var school = [edu.institution, edu.location].filter(Boolean).map(esc).join(', ');
+        eduContent +=
+          '<div class="exec-edu-entry">' +
+            '<div class="exec-edu-hd">' +
+              '<span class="exec-edu-degree">' + esc(edu.degree) + '</span>' +
+              '<span class="exec-edu-year">' + esc(edu.year) + '</span>' +
+            '</div>' +
+            (school ? '<div class="exec-edu-school">' + school + '</div>' : '') +
+          '</div>';
+      });
+      body += execRow('Education', eduContent);
+    }
+
+    if (state.skills.length) {
+      var skillsContent = '<div class="exec-skills-wrap">';
+      state.skills.forEach(function (sk) {
+        var cls = sk.level === 'Expert' ? ' exec-sk-expert' : sk.level === 'Beginner' ? ' exec-sk-beginner' : '';
+        skillsContent += '<span class="exec-skill' + cls + '">' + esc(sk.name) + '</span>';
+      });
+      skillsContent += '</div>';
+      body += execRow('Skills', skillsContent);
+    }
+
+    if (state.projects.length) {
+      var projContent = '';
+      state.projects.forEach(function (proj) {
+        projContent +=
+          '<div class="exec-proj-entry">' +
+            '<span class="exec-proj-name">' + esc(proj.name) + '</span>' +
+            (proj.techStack ? '<span class="exec-proj-stack"> — ' + esc(proj.techStack) + '</span>' : '') +
+            (proj.url ? '<span class="exec-proj-url"> · ' + esc(proj.url) + '</span>' : '') +
+            (proj.description ? '<div class="exec-proj-desc">' + esc(proj.description) + '</div>' : '') +
+          '</div>';
+      });
+      body += execRow('Projects', projContent);
+    }
+
+    if (state.certifications.length) {
+      var certContent = '';
+      state.certifications.forEach(function (cert) {
+        certContent += '<div class="exec-cert-item">' +
+          '<span class="exec-cert-name">' + esc(cert.name) + '</span>' +
+          (cert.issuer ? '<span class="exec-cert-issuer"> · ' + esc(cert.issuer) + '</span>' : '') +
+          (cert.year   ? '<span class="exec-cert-year"> · ' + esc(cert.year) + '</span>' : '') +
+        '</div>';
+      });
+      body += execRow('Certifications', certContent);
+    }
+
+    return '<div class="tpl-executive">' +
+      '<div class="exec-header">' +
+        '<div class="exec-header-left">' +
+          '<h1 class="exec-name">' + (esc(p.name) || 'Your Name') + '</h1>' +
+          (p.jobTitle ? '<div class="exec-jobtitle">' + esc(p.jobTitle) + '</div>' : '') +
+        '</div>' +
+        (contactItems ? '<div class="exec-header-right">' + contactItems + '</div>' : '') +
+      '</div>' +
+      '<div class="exec-body">' + body + '</div>' +
+    '</div>';
+  }
+
+  function execRow(label, content) {
+    return '<div class="exec-row">' +
+      '<div class="exec-label">' + label + '</div>' +
+      '<div class="exec-content">' + content + '</div>' +
+    '</div>';
+  }
+
+  function execCI(label, text) {
+    return '<div class="exec-c-item">' +
+      '<span class="exec-c-label">' + label + '</span>' +
+      '<span>' + esc(text) + '</span>' +
+    '</div>';
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+   *  RESUME STRENGTH METER
+   * ──────────────────────────────────────────────────────────── */
+  function updateStrengthMeter() {
+    var fill = $('strengthFill');
+    var pct  = $('strengthPct');
+    var tips = $('strengthTips');
+    if (!fill || !pct) return;
+
+    var score   = 0;
+    var missing = [];
+    var p = state.personal;
+
+    /* Personal — 28 pts */
+    if (p.name)     score += 8; else missing.push('Add your full name');
+    if (p.email)    score += 6; else missing.push('Add email address');
+    if (p.phone)    score += 4; else missing.push('Add phone number');
+    if (p.location) score += 4; else missing.push('Add location');
+    if (p.jobTitle) score += 4; else missing.push('Add job title');
+    if (p.linkedin) score += 1;
+    if (p.website)  score += 1;
+
+    /* Summary — 10 pts */
+    if (state.summary && state.summary.length > 60)       score += 10;
+    else if (state.summary && state.summary.length > 0)   score += 5;
+    else missing.push('Add a professional summary');
+
+    /* Experience — 25 pts */
+    if (state.experience.length >= 2)       score += 25;
+    else if (state.experience.length === 1) score += 14;
+    else missing.push('Add work experience');
+
+    /* Education — 15 pts */
+    if (state.education.length >= 1) score += 15;
+    else missing.push('Add education');
+
+    /* Skills — 15 pts */
+    if (state.skills.length >= 5)       score += 15;
+    else if (state.skills.length >= 2)  score += 8;
+    else if (state.skills.length === 1) score += 4;
+    else missing.push('Add at least 5 skills');
+
+    /* Projects — 7 pts */
+    if (state.projects.length >= 1) score += 7;
+    else missing.push('Add a project');
+
+    score = Math.min(score, 100);
+
+    fill.style.width = score + '%';
+    fill.className = 'rc-strength-fill' +
+      (score >= 85 ? ' great' : score >= 65 ? ' good' : score >= 40 ? ' ok' : ' weak');
+    pct.textContent = score + '%';
+    pct.className = 'rc-strength-pct' +
+      (score >= 85 ? ' great' : score >= 65 ? ' good' : score >= 40 ? ' ok' : ' weak');
+
+    if (tips) {
+      var tipHTML = missing.slice(0, 2).map(function (t) {
+        return '<span class="rc-strength-tip">💡 ' + t + '</span>';
+      }).join('');
+      tips.innerHTML = tipHTML;
+    }
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+   *  COVER LETTER
+   * ──────────────────────────────────────────────────────────── */
+  var CL_STORAGE_KEY = 'resumecraft_cl';
+
+  function clDefaultState() {
+    return {
+      recipientName: '', recipientTitle: '', company: '',
+      companyAddress: '', position: '', jobRef: '',
+      tone: 'professional',
+      opening: '', body1: '', body2: '', body3: '', closing: ''
+    };
+  }
+
+  var clState = clDefaultState();
+
+  function saveCLState() {
+    try { localStorage.setItem(CL_STORAGE_KEY, JSON.stringify(clState)); } catch (e) {}
+    var badge = $('clSaveBadge');
+    if (badge) {
+      badge.textContent = 'Saving…';
+      badge.style.color = '#f59e0b';
+      setTimeout(function () {
+        badge.textContent = '✓ Saved';
+        badge.style.color = '#10b981';
+      }, 450);
+    }
+  }
+
+  function loadCLState() {
+    try {
+      var raw = localStorage.getItem(CL_STORAGE_KEY);
+      if (raw) clState = Object.assign(clDefaultState(), JSON.parse(raw));
+    } catch (e) { clState = clDefaultState(); }
+  }
+
+  var CL_META_FIELDS = [
+    { id: 'cl-recipientName',  key: 'recipientName',  label: 'Hiring Manager Name',   ph: 'e.g. Sarah Johnson',        half: true },
+    { id: 'cl-recipientTitle', key: 'recipientTitle', label: 'Their Title',            ph: 'e.g. Engineering Manager',  half: true },
+    { id: 'cl-company',        key: 'company',        label: 'Company Name',           ph: 'e.g. Acme Corp',            half: true },
+    { id: 'cl-companyAddress', key: 'companyAddress', label: 'Company Address',        ph: 'e.g. 123 Main St, NY 10001',half: true },
+    { id: 'cl-position',       key: 'position',       label: 'Position Applied For',   ph: 'e.g. Senior Software Engineer', half: true },
+    { id: 'cl-jobRef',         key: 'jobRef',         label: 'Job Reference # (opt.)', ph: 'e.g. JR-1234',              half: true }
+  ];
+
+  var CL_PARAGRAPHS = [
+    { id: 'cl-opening', key: 'opening', label: '✍️ Opening Paragraph',  rows: 4, ph: 'I am writing to express my interest in the [position] role…' },
+    { id: 'cl-body1',   key: 'body1',   label: '💼 Experience Highlight', rows: 5, ph: 'With X years of experience in…' },
+    { id: 'cl-body2',   key: 'body2',   label: '⚡ Skills & Strengths',   rows: 5, ph: 'My core competencies include…' },
+    { id: 'cl-body3',   key: 'body3',   label: '🎯 Company Fit & Value',  rows: 4, ph: 'I am particularly drawn to [company] because…' },
+    { id: 'cl-closing', key: 'closing', label: '🤝 Closing Statement',    rows: 3, ph: 'I would welcome the opportunity to discuss how I can contribute…' }
+  ];
+
+  function buildCLEditor() {
+    var container = $('clSections');
+    if (!container) return;
+
+    /* ── Section 01: Job & Recipient ── */
+    var html = clSection('01', '📋', 'Job &amp; Recipient Details', 'job',
+      (function () {
+        var s = '';
+        for (var i = 0; i < CL_META_FIELDS.length; i += 2) {
+          s += '<div class="rc-form-row">';
+          s += clTextField(CL_META_FIELDS[i]);
+          if (CL_META_FIELDS[i + 1]) s += clTextField(CL_META_FIELDS[i + 1]);
+          s += '</div>';
+        }
+        return s;
+      }())
+    );
+
+    /* ── Section 02: Tone & Auto-fill ── */
+    html += clSection('02', '🎨', 'Tone &amp; Auto-Fill', 'tone',
+      '<div class="rc-field">' +
+        '<label class="rc-label">Letter Tone</label>' +
+        '<div class="cl-tone-btns" id="clToneBtns">' +
+          ['professional','enthusiastic','concise'].map(function (t) {
+            return '<button class="rc-ctrl-btn' + (clState.tone === t ? ' active' : '') +
+              '" data-tone="' + t + '">' +
+              (t === 'professional' ? '🎩 Professional' : t === 'enthusiastic' ? '🔥 Enthusiastic' : '⚡ Concise') +
+              '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+      '<button class="cl-autofill-btn" id="clAutoFillBtn" type="button">' +
+        '✨ Auto-Fill from Resume Data' +
+      '</button>' +
+      '<p class="cl-autofill-note">Generates a complete letter based on your resume. You can edit it freely.</p>'
+    );
+
+    /* ── Section 03: Letter Content ── */
+    var paraHTML = '';
+    CL_PARAGRAPHS.forEach(function (para) {
+      paraHTML += '<div class="rc-field">' +
+        '<label class="rc-label">' + para.label + '</label>' +
+        '<textarea class="rc-textarea cl-textarea" id="' + para.id + '" rows="' + para.rows + '" ' +
+          'data-cl-key="' + para.key + '" ' +
+          'placeholder="' + esc(para.ph) + '">' + esc(clState[para.key] || '') + '</textarea>' +
+        '</div>';
+    });
+    html += clSection('03', '✍️', 'Letter Content', 'content', paraHTML);
+
+    container.innerHTML = html;
+  }
+
+  function clSection(num, icon, title, bodyId, bodyHTML) {
+    return '<div class="rc-section">' +
+      '<button class="rc-section-toggle" data-cl-toggle="' + bodyId + '" type="button">' +
+        '<span class="rc-sec-num">' + num + '</span>' +
+        '<span class="rc-sec-icon">' + icon + '</span>' +
+        '<span class="rc-sec-title">' + title + '</span>' +
+        '<span class="rc-sec-chev">▾</span>' +
+      '</button>' +
+      '<div class="rc-section-body" id="cl-body-' + bodyId + '">' +
+        bodyHTML +
+      '</div>' +
+    '</div>';
+  }
+
+  function clTextField(meta) {
+    return '<div class="rc-field">' +
+      '<label class="rc-label">' + meta.label + '</label>' +
+      '<input class="rc-input" type="text" id="' + meta.id + '" ' +
+        'data-cl-key="' + meta.key + '" ' +
+        'value="' + esc(clState[meta.key] || '') + '" ' +
+        'placeholder="' + esc(meta.ph) + '">' +
+    '</div>';
+  }
+
+  var updateCLPreview = debounce(function () {
+    var el = $('clLetterPreview');
+    if (!el) return;
+    el.innerHTML = buildCLHTML();
+  }, 150);
+
+  function buildCLHTML() {
+    var p = state.personal;
+    var cl = clState;
+
+    /* Date */
+    var today = new Date();
+    var months = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+    var dateStr = months[today.getMonth()] + ' ' + today.getDate() + ', ' + today.getFullYear();
+
+    /* Sender header */
+    var senderHTML = '';
+    if (p.name)     senderHTML += '<div class="cl-sender-name">' + esc(p.name) + '</div>';
+    if (p.jobTitle) senderHTML += '<div class="cl-sender-title">' + esc(p.jobTitle) + '</div>';
+    var cParts = [p.email, p.phone, p.location].filter(Boolean).map(esc);
+    if (cParts.length) senderHTML += '<div class="cl-sender-contact">' + cParts.join(' · ') + '</div>';
+    if (p.linkedin || p.website) {
+      var links = [p.linkedin, p.website].filter(Boolean).map(esc);
+      senderHTML += '<div class="cl-sender-contact">' + links.join(' · ') + '</div>';
+    }
+
+    /* Recipient block */
+    var recipHTML = '<div class="cl-date">' + dateStr + '</div>';
+    if (cl.recipientName || cl.company) {
+      recipHTML += '<div class="cl-recipient">';
+      if (cl.recipientName)    recipHTML += '<div>' + esc(cl.recipientName) + '</div>';
+      if (cl.recipientTitle)   recipHTML += '<div>' + esc(cl.recipientTitle) + '</div>';
+      if (cl.company)          recipHTML += '<div>' + esc(cl.company) + '</div>';
+      if (cl.companyAddress)   recipHTML += '<div>' + esc(cl.companyAddress) + '</div>';
+      recipHTML += '</div>';
+    }
+
+    /* Salutation */
+    var salutation = cl.recipientName
+      ? 'Dear ' + esc(cl.recipientName) + ','
+      : 'Dear Hiring Manager,';
+
+    /* Body paragraphs */
+    var bodyHTML = '';
+    ['opening','body1','body2','body3','closing'].forEach(function (k) {
+      if (cl[k]) bodyHTML += '<p class="cl-para">' + esc(cl[k]).replace(/\n/g, '<br>') + '</p>';
+    });
+    if (!bodyHTML) {
+      bodyHTML = '<p class="cl-para cl-placeholder">Use the editor on the left to write your cover letter, or click "✨ Auto-Fill from Resume Data" to generate a complete draft.</p>';
+    }
+
+    return '<div class="tpl-coverletter">' +
+      '<div class="cl-header">' +
+        '<div class="cl-header-stripe"></div>' +
+        '<div class="cl-header-body">' + senderHTML + '</div>' +
+      '</div>' +
+      '<div class="cl-body">' +
+        recipHTML +
+        '<div class="cl-salutation">' + salutation + '</div>' +
+        bodyHTML +
+        '<div class="cl-sign">' +
+          '<div>Sincerely,</div>' +
+          (p.name ? '<div class="cl-sign-name">' + esc(p.name) + '</div>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /* ── Auto-fill: generate letter text from resume data ── */
+  function autoFillCoverLetter() {
+    var p = state.personal;
+    var tone = clState.tone || 'professional';
+    var company  = clState.company  || '[Company Name]';
+    var position = clState.position || p.jobTitle || '[Position]';
+
+    var topSkills = state.skills.slice(0, 3).map(function (s) { return s.name; });
+    var skillList = topSkills.length ? topSkills.join(', ') : 'my technical expertise';
+
+    var latestExp = state.experience[0];
+    var expYears  = state.experience.length;
+    var expIntro  = latestExp
+      ? 'In my most recent role as ' + (latestExp.jobTitle || 'a professional') +
+        (latestExp.company ? ' at ' + latestExp.company : '') + ', I '
+      : 'Throughout my career, I have ';
+
+    var openings = {
+      professional: 'I am writing to express my strong interest in the ' + position + ' position at ' + company + '. With ' + (expYears > 1 ? expYears + ' years of progressive experience' : 'dedicated experience') + ' in ' + (p.jobTitle || 'the field') + ', I am confident that my background and skills align well with your requirements.',
+      enthusiastic: 'I am thrilled to apply for the ' + position + ' role at ' + company + '! Your company\'s innovative approach has genuinely impressed me, and I am excited by the prospect of contributing my skills to such a dynamic team.',
+      concise:      'I am applying for the ' + position + ' position at ' + company + '. My ' + (expYears > 1 ? expYears + '-year' : '') + ' background in ' + (p.jobTitle || 'the field') + ' makes me a strong candidate for this role.'
+    };
+
+    var body1s = {
+      professional: expIntro + 'built a strong foundation with hands-on experience delivering impactful results. I have consistently demonstrated the ability to manage complex challenges while collaborating effectively with cross-functional teams to achieve strategic objectives.',
+      enthusiastic: expIntro + 'had the incredible opportunity to work on exciting projects that have truly shaped my skills! I am passionate about ' + (p.jobTitle || 'my field') + ' and bring an infectious energy and drive to everything I do.',
+      concise:      expIntro + 'delivered measurable results in ' + (p.jobTitle || 'my area of expertise') + '. I focus on execution and have a track record of meeting and exceeding expectations.'
+    };
+
+    var body2s = {
+      professional: 'My core competencies include ' + skillList + ', which have been instrumental in my professional success. I am committed to continuous learning and ensuring my skill set remains current with industry best practices and emerging technologies.',
+      enthusiastic: 'I am especially skilled in ' + skillList + ' — areas I am genuinely passionate about. I love diving deep into challenging problems and am always looking for new ways to grow and improve. My team would describe me as resourceful, driven, and a great collaborator!',
+      concise:      'Key skills: ' + skillList + '. I apply these competencies pragmatically to deliver quality results on schedule and within scope.'
+    };
+
+    var body3s = {
+      professional: 'I am particularly drawn to ' + company + ' because of your commitment to excellence and innovation. I believe my values and professional approach align strongly with your culture, and I am eager to bring my expertise to contribute to your continued success.',
+      enthusiastic: 'What excites me most about ' + company + ' is the amazing impact you are making in the industry! I would love nothing more than to channel my enthusiasm and skills into helping your team reach new heights. I am ready to hit the ground running!',
+      concise:      'I see a strong alignment between my experience and ' + company + '\'s needs. I am confident I can add immediate value to your team.'
+    };
+
+    var closings = {
+      professional: 'I would welcome the opportunity to discuss how my background and skills can benefit ' + company + '. Thank you for considering my application. I look forward to the possibility of speaking with you and am reachable at ' + (p.email || 'the contact details above') + '.',
+      enthusiastic: 'I would absolutely love to connect and discuss this exciting opportunity further! Please feel free to reach out at ' + (p.email || 'the contact information above') + '. Thank you so much for your time — I truly cannot wait to hear from you!',
+      concise:      'Thank you for your consideration. I am available for an interview at your convenience. Contact: ' + (p.email || '') + (p.phone ? ' · ' + p.phone : '') + '.'
+    };
+
+    clState.opening = openings[tone] || openings.professional;
+    clState.body1   = body1s[tone]   || body1s.professional;
+    clState.body2   = body2s[tone]   || body2s.professional;
+    clState.body3   = body3s[tone]   || body3s.professional;
+    clState.closing = closings[tone] || closings.professional;
+
+    /* Update textareas in DOM */
+    CL_PARAGRAPHS.forEach(function (para) {
+      var ta = $(para.id);
+      if (ta) ta.value = clState[para.key] || '';
+    });
+
+    saveCLState();
+    updateCLPreview();
+  }
+
+  function bindCLEditor() {
+    var clSec = $('clSections');
+    if (!clSec) return;
+
+    clSec.addEventListener('input', function (e) {
+      var key = e.target.dataset.clKey;
+      if (!key) return;
+      clState[key] = e.target.value;
+      saveCLState();
+      updateCLPreview();
+    });
+
+    clSec.addEventListener('change', function (e) {
+      var key = e.target.dataset.clKey;
+      if (!key) return;
+      clState[key] = e.target.value;
+      saveCLState();
+      updateCLPreview();
+    });
+
+    clSec.addEventListener('click', function (e) {
+      /* Accordion toggle */
+      var toggle = e.target.closest('[data-cl-toggle]');
+      if (toggle && !e.target.closest('[data-tone]')) {
+        var bodyEl = $('cl-body-' + toggle.dataset.clToggle);
+        if (bodyEl) {
+          var hidden = bodyEl.classList.toggle('hidden');
+          toggle.classList.toggle('collapsed', hidden);
+        }
+        return;
+      }
+      /* Tone buttons */
+      var toneBtn = e.target.closest('[data-tone]');
+      if (toneBtn) {
+        clState.tone = toneBtn.dataset.tone;
+        var toneBtns = $('clToneBtns');
+        if (toneBtns) {
+          toneBtns.querySelectorAll('.rc-ctrl-btn').forEach(function (b) {
+            b.classList.toggle('active', b === toneBtn);
+          });
+        }
+        saveCLState();
+        return;
+      }
+    });
+
+    var afBtn = $('clAutoFillBtn');
+    if (afBtn) afBtn.addEventListener('click', autoFillCoverLetter);
+  }
+
+  function initCoverLetter() {
+    loadCLState();
+    buildCLEditor();
+    bindCLEditor();
+    updateCLPreview();
+  }
+
+  /* ──────────────────────────────────────────────────────────────
+   *  MODE TABS  (Resume ↔ Cover Letter)
+   * ──────────────────────────────────────────────────────────── */
+  var currentMode = 'resume';
+
+  function switchMode(mode) {
+    currentMode = mode;
+    var resumeLayout = $('resumeLayout');
+    var clLayout     = $('clLayout');
+    var resumeCtrls  = document.querySelectorAll('.rc-resume-ctrl');
+
+    if (resumeLayout) resumeLayout.classList.toggle('hidden', mode !== 'resume');
+    if (clLayout)     clLayout.classList.toggle('hidden', mode !== 'coverletter');
+
+    var modeTabs = $('modeTabs');
+    if (modeTabs) {
+      modeTabs.querySelectorAll('.rc-mode-tab').forEach(function (btn) {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+    }
+
+    resumeCtrls.forEach(function (el) {
+      el.style.display = (mode === 'resume') ? '' : 'none';
+    });
+
+    if (mode === 'coverletter') updateCLPreview();
+  }
+
+  function initModeTabs() {
+    var modeTabs = $('modeTabs');
+    if (!modeTabs) return;
+    modeTabs.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-mode]');
+      if (btn) switchMode(btn.dataset.mode);
+    });
   }
 
 }());

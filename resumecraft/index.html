@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="ResumeCraft — Build stunning professional resumes in minutes">
-  <title>ResumeCraft — Professional Resume Builder</title>
+  <meta name="description" content="ResumeCraft — Build stunning professional resumes &amp; cover letters">
+  <title>ResumeCraft — Professional Resume &amp; Cover Letter Builder</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,14 +20,22 @@
       <span class="rc-nav__name">ResumeCraft</span>
     </div>
 
+    <!-- ── Mode Tabs ── -->
+    <div class="rc-mode-tabs" id="modeTabs">
+      <button class="rc-mode-tab active" data-mode="resume">📄 Resume</button>
+      <button class="rc-mode-tab" data-mode="coverletter">✉️ Cover Letter</button>
+    </div>
+
     <div class="rc-nav__controls">
 
-      <div class="rc-ctrl-group">
+      <div class="rc-ctrl-group rc-resume-ctrl">
         <span class="rc-ctrl-label">Template</span>
         <div class="rc-btn-group" id="templateBtns">
           <button class="rc-ctrl-btn active" data-template="modern">Modern</button>
           <button class="rc-ctrl-btn" data-template="classic">Classic</button>
           <button class="rc-ctrl-btn" data-template="minimal">Minimal</button>
+          <button class="rc-ctrl-btn" data-template="professional">Pro</button>
+          <button class="rc-ctrl-btn" data-template="executive">Exec</button>
         </div>
       </div>
 
@@ -40,10 +48,22 @@
           <button class="rc-swatch" data-color="#f43f5e" style="--sw:#f43f5e" title="Rose"></button>
           <button class="rc-swatch" data-color="#f59e0b" style="--sw:#f59e0b" title="Amber"></button>
           <button class="rc-swatch" data-color="#8b5cf6" style="--sw:#8b5cf6" title="Violet"></button>
+          <button class="rc-swatch" data-color="#1e293b" style="--sw:#1e293b" title="Slate"></button>
         </div>
       </div>
 
-      <div class="rc-ctrl-group">
+      <div class="rc-ctrl-group rc-resume-ctrl">
+        <span class="rc-ctrl-label">Font</span>
+        <select class="rc-select-sm" id="fontFamilySelect">
+          <option value="inter">Inter</option>
+          <option value="georgia">Georgia</option>
+          <option value="roboto">Roboto</option>
+          <option value="serif">Times</option>
+          <option value="mono">Mono</option>
+        </select>
+      </div>
+
+      <div class="rc-ctrl-group rc-resume-ctrl">
         <span class="rc-ctrl-label">Size</span>
         <div class="rc-btn-group" id="fontSizeBtns">
           <button class="rc-ctrl-btn" data-size="small">S</button>
@@ -58,9 +78,9 @@
   </nav>
 
   <!-- ═══════════════════════════════════════════════════════════
-       APP LAYOUT
+       RESUME MODE LAYOUT
        ═══════════════════════════════════════════════════════════ -->
-  <div class="rc-layout">
+  <div class="rc-layout" id="resumeLayout">
 
     <!-- ── Editor Panel (40%) ────────────────────────────────── -->
     <aside class="rc-editor" id="rcEditor">
@@ -72,6 +92,19 @@
           </div>
           <span class="rc-save-badge" id="saveBadge">✓ Saved</span>
         </header>
+
+        <!-- Resume Strength Meter -->
+        <div class="rc-strength-wrap" id="strengthWrap">
+          <div class="rc-strength-header">
+            <span class="rc-strength-label">Resume Strength</span>
+            <span class="rc-strength-pct" id="strengthPct">0%</span>
+          </div>
+          <div class="rc-strength-track">
+            <div class="rc-strength-fill" id="strengthFill"></div>
+          </div>
+          <div class="rc-strength-tips" id="strengthTips"></div>
+        </div>
+
         <div class="rc-sections" id="rcSections">
           <!-- Populated by app.js -->
         </div>
@@ -86,7 +119,45 @@
           <span class="rc-preview__hint">Scroll to see full resume</span>
         </div>
         <div class="rc-a4-wrap">
-          <div id="resumePreview" class="rc-resume" data-fontsize="medium">
+          <div id="resumePreview" class="rc-resume" data-fontsize="medium" data-fontfamily="inter">
+            <!-- Built by app.js -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       COVER LETTER MODE LAYOUT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="rc-layout hidden" id="clLayout">
+
+    <!-- ── CL Editor Panel ───────────────────────────────────── -->
+    <aside class="rc-editor" id="clEditorPanel">
+      <div class="rc-editor__scroll">
+        <header class="rc-editor__header">
+          <div class="rc-editor__header-left">
+            <h2 class="rc-editor__title">Cover Letter Editor</h2>
+            <p class="rc-editor__sub">Smart auto-fill from your resume</p>
+          </div>
+          <span class="rc-save-badge" id="clSaveBadge">✓ Saved</span>
+        </header>
+        <div class="rc-sections" id="clSections">
+          <!-- Populated by app.js -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── CL Preview Panel ──────────────────────────────────── -->
+    <main class="rc-preview" id="clPreview">
+      <div class="rc-preview__scroll">
+        <div class="rc-preview__bar">
+          <span class="rc-preview__label">✉️ Cover Letter Preview</span>
+          <span class="rc-preview__hint">Professional formatted letter</span>
+        </div>
+        <div class="rc-a4-wrap">
+          <div id="clLetterPreview" class="rc-resume">
             <!-- Built by app.js -->
           </div>
         </div>
