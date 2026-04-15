@@ -1181,6 +1181,14 @@
     updatePreview();
     initCoverLetter();
     initModeTabs();
+    initParser();
+    initATS();
+    initImprover();
+    initDNA();
+    initPredictor();
+    initVoice();
+    initPortfolio();
+    initSkillGap();
   }
 
   /* Run after DOM is ready */
@@ -1807,18 +1815,31 @@
   }
 
   /* ──────────────────────────────────────────────────────────────
-   *  MODE TABS  (Resume ↔ Cover Letter)
+   *  MODE TABS  (Resume / Cover Letter / 8 new tools)
    * ──────────────────────────────────────────────────────────── */
   var currentMode = 'resume';
 
+  var MODE_LAYOUT_MAP = {
+    'resume':      'resumeLayout',
+    'coverletter': 'clLayout',
+    'parser':      'parserLayout',
+    'ats':         'atsLayout',
+    'improver':    'improverLayout',
+    'dna':         'dnaLayout',
+    'predictor':   'predictorLayout',
+    'voice':       'voiceLayout',
+    'portfolio':   'portfolioLayout',
+    'skillgap':    'skillGapLayout'
+  };
+
   function switchMode(mode) {
     currentMode = mode;
-    var resumeLayout = $('resumeLayout');
-    var clLayout     = $('clLayout');
-    var resumeCtrls  = document.querySelectorAll('.rc-resume-ctrl');
+    var activeId = MODE_LAYOUT_MAP[mode];
 
-    if (resumeLayout) resumeLayout.classList.toggle('hidden', mode !== 'resume');
-    if (clLayout)     clLayout.classList.toggle('hidden', mode !== 'coverletter');
+    Object.keys(MODE_LAYOUT_MAP).forEach(function (m) {
+      var el = $(MODE_LAYOUT_MAP[m]);
+      if (el) el.classList.toggle('hidden', MODE_LAYOUT_MAP[m] !== activeId);
+    });
 
     var modeTabs = $('modeTabs');
     if (modeTabs) {
@@ -1827,6 +1848,7 @@
       });
     }
 
+    var resumeCtrls = document.querySelectorAll('.rc-resume-ctrl');
     resumeCtrls.forEach(function (el) {
       el.style.display = (mode === 'resume') ? '' : 'none';
     });
@@ -1841,6 +1863,962 @@
       var btn = e.target.closest('[data-mode]');
       if (btn) switchMode(btn.dataset.mode);
     });
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+   *  FEATURE 1 — RESUME PARSER
+   * ══════════════════════════════════════════════════════════════ */
+  function initParser() {
+    if (typeof window.pdfjsLib !== 'undefined') {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    var btn       = $('btnUpload');
+    var fileInput = $('resumeFile');
+    var zone      = $('uploadZone');
+
+    if (btn && fileInput) {
+      btn.addEventListener('click', function () { fileInput.click(); });
+      fileInput.addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'txt') { parseTxtFile(file); }
+        else if (ext === 'pdf') { parsePdfFile(file); }
+        else { setParserStatus('Unsupported file type. Please use .txt or .pdf', 'error'); }
+        fileInput.value = '';
+      });
+    }
+
+    if (zone) {
+      zone.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+      zone.addEventListener('dragleave', function () {
+        zone.classList.remove('dragover');
+      });
+      zone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        var file = e.dataTransfer.files[0];
+        if (!file) return;
+        var ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'txt') { parseTxtFile(file); }
+        else if (ext === 'pdf') { parsePdfFile(file); }
+      });
+    }
+  }
+
+  function parseTxtFile(file) {
+    setParserStatus('Reading file…', 'info');
+    var reader = new FileReader();
+    reader.onload = function (e) { parseResumeText(e.target.result); };
+    reader.onerror = function () { setParserStatus('Error reading file.', 'error'); };
+    reader.readAsText(file);
+  }
+
+  function parsePdfFile(file) {
+    setParserStatus('Extracting text from PDF…', 'info');
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      if (typeof window.pdfjsLib === 'undefined') {
+        setParserStatus('PDF library not loaded. Please try a .txt file.', 'error');
+        return;
+      }
+      var loadingTask = window.pdfjsLib.getDocument({ data: e.target.result });
+      loadingTask.promise.then(function (pdf) {
+        var promises = [];
+        for (var i = 1; i <= pdf.numPages; i++) {
+          promises.push(
+            pdf.getPage(i).then(function (page) {
+              return page.getTextContent().then(function (c) {
+                return c.items.map(function (it) { return it.str; }).join(' ');
+              });
+            })
+          );
+        }
+        Promise.all(promises).then(function (pages) {
+          parseResumeText(pages.join('\n'));
+        });
+      }).catch(function () {
+        setParserStatus('Could not parse PDF. Try saving your resume as plain text (.txt) first.', 'error');
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function setParserStatus(msg, type) {
+    var el = $('parserStatus');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'rc-parser-status rc-parser-status--' + type;
+    el.classList.remove('hidden');
+  }
+
+  function parseResumeText(text) {
+    var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var extracted = { name:'', email:'', phone:'', location:'', linkedin:'', website:'', summary:'', skills:[] };
+
+    var emailMatch = text.match(/[\w.+\-]+@[\w\-]+\.[a-zA-Z]{2,}/);
+    if (emailMatch) extracted.email = emailMatch[0];
+
+    var phoneMatch = text.match(/(\+?[\d][\d\s\-().]{6,}\d)/);
+    if (phoneMatch) extracted.phone = phoneMatch[1].replace(/\s{2,}/g, ' ').trim();
+
+    var liMatch = text.match(/linkedin\.com\/in\/[\w\-]+/i);
+    if (liMatch) extracted.linkedin = liMatch[0];
+
+    var webMatch = text.match(/(?:https?:\/\/)?(?:www\.)?[\w\-]+\.(?:com|io|dev|me|co|net|org)(?:\/[\w\-]*)?/i);
+    if (webMatch && !webMatch[0].toLowerCase().includes('linkedin')) extracted.website = webMatch[0];
+
+    for (var i = 0; i < Math.min(5, lines.length); i++) {
+      if (!lines[i].match(/[@\/\\()\d\|·•:]/)) { extracted.name = lines[i]; break; }
+    }
+
+    var sectionRe = {
+      summary:    /^(summary|profile|objective|about\s*me|professional\s*summary)/i,
+      skills:     /^(skills?|technical\s*skills?|core\s*competenc|key\s*skills?|technologies)/i,
+      experience: /^(experience|work\s*experience|employment|work\s*history|professional\s*experience)/i
+    };
+    var curSec = null;
+    var secContent = { summary:[], skills:[], experience:[] };
+    lines.forEach(function (line) {
+      for (var sec in sectionRe) {
+        if (sectionRe[sec].test(line) && line.length < 45) { curSec = sec; return; }
+      }
+      if (curSec && secContent[curSec]) secContent[curSec].push(line);
+    });
+
+    if (secContent.summary.length) extracted.summary = secContent.summary.slice(0, 4).join(' ').slice(0, 250);
+
+    var skillsText = secContent.skills.join(', ');
+    extracted.skills = skillsText.split(/[,•|\n\/]/)
+      .map(function (s) { return s.replace(/^\s*[-–]\s*/, '').trim(); })
+      .filter(function (s) { return s.length > 1 && s.length < 35; })
+      .slice(0, 20);
+
+    showParserPreview(extracted);
+  }
+
+  function showParserPreview(data) {
+    var container = $('parserPreview');
+    if (!container) return;
+    var skillsPrev = data.skills.slice(0, 5).join(', ') + (data.skills.length > 5 ? '…' : '');
+    var count = ['name','email','phone','linkedin','website','summary'].filter(function (k) { return data[k]; }).length + (data.skills.length ? 1 : 0);
+
+    container.innerHTML =
+      '<div class="rc-parser-found">' +
+        '<h3 class="rc-parser-found-title">✅ ' + count + ' fields extracted</h3>' +
+        (data.name     ? pRow('Name',      data.name)    : '') +
+        (data.email    ? pRow('Email',     data.email)   : '') +
+        (data.phone    ? pRow('Phone',     data.phone)   : '') +
+        (data.linkedin ? pRow('LinkedIn',  data.linkedin): '') +
+        (data.website  ? pRow('Website',   data.website) : '') +
+        (data.summary  ? pRow('Summary',   data.summary.slice(0, 100) + (data.summary.length > 100 ? '…' : '')) : '') +
+        (data.skills.length ? pRow('Skills (' + data.skills.length + ')', skillsPrev) : '') +
+      '</div>' +
+      '<div class="rc-parser-actions">' +
+        '<button class="rc-btn-primary" id="btnApplyParsed" type="button">✅ Apply to Resume Editor</button>' +
+        '<button class="rc-btn-secondary" id="btnDiscardParsed" type="button">✕ Discard</button>' +
+      '</div>';
+    container.classList.remove('hidden');
+    setParserStatus('Review the extracted data, then click Apply.', 'success');
+
+    container._parsedData = data;
+    $('btnApplyParsed').addEventListener('click', function () { applyParsedData(container._parsedData); });
+    $('btnDiscardParsed').addEventListener('click', function () {
+      container.classList.add('hidden');
+      $('parserStatus').classList.add('hidden');
+    });
+  }
+
+  function pRow(label, value) {
+    return '<div class="rc-prow"><span class="rc-prow-label">' + esc(label) + '</span><span class="rc-prow-value">' + esc(value) + '</span></div>';
+  }
+
+  function applyParsedData(data) {
+    var personalMap = { name:'name', email:'email', phone:'phone', linkedin:'linkedin', website:'website' };
+    Object.keys(personalMap).forEach(function (k) {
+      if (data[k]) {
+        state.personal[k] = data[k];
+        var el = $('f-personal-' + k);
+        if (el) el.value = data[k];
+      }
+    });
+    if (data.summary) {
+      state.summary = data.summary;
+      var ta = $('summaryTA');
+      if (ta) { ta.value = data.summary; updateSummaryCount(); }
+    }
+    if (data.skills.length) {
+      data.skills.forEach(function (name) {
+        if (!name) return;
+        var exists = false;
+        for (var i = 0; i < state.skills.length; i++) {
+          if (state.skills[i].name.toLowerCase() === name.toLowerCase()) { exists = true; break; }
+        }
+        if (!exists) state.skills.push({ id: uid(), name: name, level: 'Intermediate' });
+      });
+      renderSkillsChips();
+    }
+    saveState();
+    updatePreview();
+    setParserStatus('✅ Data applied! Switch to the Resume tab to review.', 'success');
+    var prev = $('parserPreview');
+    if (prev) prev.classList.add('hidden');
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+   *  FEATURE 2 + 6 — ATS SCORE CALCULATOR & JD TAILORING
+   * ══════════════════════════════════════════════════════════════ */
+  var STOPWORDS = (function () {
+    var sw = 'a an the and or but in on at to for of with by from as is was are were be been being have has had do does did will would could should may might shall can need must am i my we our you your they their it its this that these those not no nor so yet both either neither each few more most other some such than then there when where while who which what all any about up out if how her him his she he us them into over also just now only even still get very new first last other between back through during since before after under while our per etc ie eg'.split(' ');
+    var set = {};
+    sw.forEach(function (w) { set[w] = true; });
+    return set;
+  }());
+
+  function getKeywords(text) {
+    return (text || '').toLowerCase()
+      .replace(/[^a-z0-9+#.\-\s]/g, ' ')
+      .split(/\s+/)
+      .filter(function (w) { return w.length > 2 && !STOPWORDS[w]; });
+  }
+
+  function getResumeText() {
+    var p = state.personal;
+    var parts = [p.name, p.jobTitle, p.location, state.summary];
+    state.experience.forEach(function (e) { parts.push(e.jobTitle, e.company, e.description); });
+    state.education.forEach(function (e) { parts.push(e.degree, e.institution); });
+    state.skills.forEach(function (s) { parts.push(s.name); });
+    state.projects.forEach(function (pr) { parts.push(pr.name, pr.techStack, pr.description); });
+    state.certifications.forEach(function (c) { parts.push(c.name, c.issuer); });
+    return parts.filter(Boolean).join(' ');
+  }
+
+  function initATS() {
+    var btn = $('btnATSAnalyze');
+    if (btn) btn.addEventListener('click', calcATSScore);
+
+    var jdEl = $('atsJD');
+    if (jdEl) {
+      jdEl.addEventListener('input', debounce(function () {
+        var cc = $('atsJDCount');
+        if (cc) cc.textContent = jdEl.value.length + ' chars';
+      }, 100));
+    }
+  }
+
+  function calcATSScore() {
+    var jdEl = $('atsJD');
+    if (!jdEl) return;
+    var jdText = jdEl.value.trim();
+    if (!jdText) {
+      $('atsResults').innerHTML = '<p class="rc-tool-hint">Paste a job description and click Analyze.</p>';
+      return;
+    }
+
+    var jdWords = getKeywords(jdText);
+    var resumeSet = {};
+    getKeywords(getResumeText()).forEach(function (w) { resumeSet[w] = true; });
+
+    var freq = {};
+    jdWords.forEach(function (w) { freq[w] = (freq[w] || 0) + 1; });
+    var jdKeywords = Object.keys(freq)
+      .sort(function (a, b) { return freq[b] - freq[a]; })
+      .slice(0, 30);
+
+    var matched = jdKeywords.filter(function (k) { return resumeSet[k]; });
+    var missing = jdKeywords.filter(function (k) { return !resumeSet[k]; });
+    var score = Math.round((matched.length / Math.max(jdKeywords.length, 1)) * 100);
+    window._atsScore = score;
+
+    var cls   = score >= 75 ? 'great' : score >= 50 ? 'good' : score >= 30 ? 'ok' : 'weak';
+    var label = score >= 75 ? 'Excellent Match' : score >= 50 ? 'Good Match' : score >= 30 ? 'Fair Match' : 'Needs Work';
+
+    var html =
+      '<div class="ats-score-wrap">' +
+        '<div class="ats-score-circle ' + cls + '">' +
+          '<span class="ats-sn">' + score + '</span><span class="ats-sp">%</span>' +
+        '</div>' +
+        '<div class="ats-score-info">' +
+          '<div class="ats-score-label ' + cls + '">' + label + '</div>' +
+          '<div class="ats-score-sub">Matched ' + matched.length + ' of ' + jdKeywords.length + ' keywords</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ats-bar-wrap"><div class="ats-bar-track"><div class="ats-bar-fill ' + cls + '" style="width:' + score + '%"></div></div></div>';
+
+    if (matched.length) {
+      html += '<div class="ats-kw-sec"><h4 class="ats-kw-hd ats-matched">✅ Matched (' + matched.length + ')</h4>' +
+        '<div class="ats-chips">' + matched.map(function (k) { return '<span class="ats-chip matched">' + esc(k) + '</span>'; }).join('') + '</div></div>';
+    }
+    if (missing.length) {
+      html += '<div class="ats-kw-sec"><h4 class="ats-kw-hd ats-missing">❌ Missing (' + missing.length + ')</h4>' +
+        '<div class="ats-chips">' + missing.map(function (k) { return '<span class="ats-chip missing">' + esc(k) + '</span>'; }).join('') + '</div>' +
+        '<button class="rc-btn-primary ats-insert-btn" id="btnInsertKW" type="button">⚡ Insert Missing Keywords into Skills</button>' +
+        '</div>';
+    }
+
+    $('atsResults').innerHTML = html;
+
+    var insertBtn = $('btnInsertKW');
+    if (insertBtn) {
+      insertBtn.addEventListener('click', function () {
+        missing.forEach(function (kw) {
+          var exists = false;
+          for (var i = 0; i < state.skills.length; i++) {
+            if (state.skills[i].name.toLowerCase() === kw.toLowerCase()) { exists = true; break; }
+          }
+          if (!exists) state.skills.push({ id: uid(), name: kw, level: 'Intermediate' });
+        });
+        renderSkillsChips();
+        saveState();
+        updatePreview();
+        insertBtn.textContent = '✅ Keywords added to Skills!';
+        insertBtn.disabled = true;
+      });
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+   *  FEATURE 3 + 4 — AI RESUME IMPROVER & WEAKNESS ANALYZER
+   * ══════════════════════════════════════════════════════════════ */
+  var WEAK_MAP = {
+    'worked on':           'Developed',
+    'worked with':         'Collaborated with',
+    'helped with':         'Contributed to',
+    'helped to':           'Enabled',
+    'helped':              'Assisted',
+    'was responsible for': 'Managed',
+    'responsible for':     'Led',
+    'assisted with':       'Supported',
+    'assisted in':         'Facilitated',
+    'was part of':         'Participated in',
+    'participated in':     'Contributed to',
+    'used':                'Leveraged',
+    'tried to':            'Achieved',
+    'made':                'Delivered',
+    'did work on':         'Engineered',
+    'was involved in':     'Drove'
+  };
+
+  var GENERIC_PHRASES = [
+    'team player','hard worker','fast learner','go-getter',
+    'detail-oriented','self-starter','results-oriented',
+    'think outside the box','synergy','dynamic','proactive'
+  ];
+
+  var POWER_VERBS = [
+    'Accelerated','Achieved','Architected','Automated','Built',
+    'Championed','Created','Delivered','Designed','Developed',
+    'Directed','Drove','Eliminated','Engineered','Enhanced',
+    'Executed','Generated','Grew','Implemented','Improved',
+    'Increased','Launched','Led','Managed','Modernized',
+    'Optimized','Overhauled','Pioneered','Reduced','Refactored',
+    'Scaled','Shipped','Simplified','Spearheaded','Streamlined',
+    'Transformed','Unified','Accelerated','Validated','Won'
+  ];
+
+  function initImprover() {
+    var btn = $('btnAnalyzeResume');
+    if (btn) btn.addEventListener('click', analyzeResume);
+  }
+
+  function analyzeResume() {
+    var issues = [];
+    var suggestions = [];
+
+    var allBullets = [];
+    state.experience.forEach(function (exp) {
+      if (!exp.description) return;
+      exp.description.split('\n').forEach(function (line) {
+        var t = line.replace(/^[\s•\-*]+/, '').trim();
+        if (t) allBullets.push({ text: t, source: exp.jobTitle || 'Experience' });
+      });
+    });
+
+    allBullets.forEach(function (bullet) {
+      var lower = bullet.text.toLowerCase();
+      for (var phrase in WEAK_MAP) {
+        if (lower.indexOf(phrase) !== -1) {
+          suggestions.push({ original: bullet.text, phrase: phrase, replacement: WEAK_MAP[phrase], source: bullet.source });
+          break;
+        }
+      }
+    });
+
+    var bulletsNoMetrics = allBullets.filter(function (b) { return !/\d/.test(b.text); });
+    if (bulletsNoMetrics.length > 2) {
+      issues.push({ severity: 'warning', message: bulletsNoMetrics.length + ' experience bullets lack numbers or metrics (%, $, counts).', examples: bulletsNoMetrics.slice(0, 2).map(function (b) { return b.text; }) });
+    }
+
+    var fullText = (state.summary + ' ' + state.experience.map(function (e) { return e.description || ''; }).join(' ')).toLowerCase();
+    var foundGeneric = GENERIC_PHRASES.filter(function (p) { return fullText.indexOf(p.toLowerCase()) !== -1; });
+    if (foundGeneric.length) {
+      issues.push({ severity: 'warning', message: 'Generic phrases weaken your resume.', phrases: foundGeneric });
+    }
+
+    if (!state.summary) issues.push({ severity: 'error', message: 'Professional summary is missing — recruiters read this first.' });
+    if (!state.experience.length) issues.push({ severity: 'error', message: 'No work experience added.' });
+    if (state.skills.length < 5) issues.push({ severity: 'warning', message: 'Add at least 5 skills (you have ' + state.skills.length + ').' });
+    if (!state.education.length) issues.push({ severity: 'warning', message: 'No education entries added.' });
+    if (!state.projects.length) issues.push({ severity: 'info', message: 'No projects listed — projects showcase practical skills.' });
+    if (state.summary && state.summary.length < 50) issues.push({ severity: 'warning', message: 'Summary is very short (' + state.summary.length + ' chars). Aim for 80–200.' });
+
+    renderImproverResults(issues, suggestions);
+  }
+
+  function renderImproverResults(issues, suggestions) {
+    var el = $('improverResults');
+    if (!el) return;
+
+    if (!issues.length && !suggestions.length) {
+      el.innerHTML = '<div class="imp-success"><span class="imp-success-icon">🎉</span><p>No major weaknesses detected. Great work!</p></div>';
+      return;
+    }
+
+    var html = '';
+
+    if (issues.length) {
+      html += '<div class="imp-section"><h3 class="imp-heading">⚠️ Issues Found (' + issues.length + ')</h3>';
+      issues.forEach(function (issue) {
+        var icon = issue.severity === 'error' ? '🔴' : issue.severity === 'warning' ? '🟡' : '🔵';
+        html += '<div class="imp-issue imp-issue--' + issue.severity + '">' +
+          '<div class="imp-issue-msg">' + icon + ' ' + esc(issue.message) + '</div>';
+        if (issue.examples) {
+          issue.examples.forEach(function (ex) {
+            html += '<div class="imp-example">&ldquo;' + esc(ex) + '&rdquo;</div>';
+          });
+        }
+        if (issue.phrases) {
+          html += '<div class="imp-chips">' + issue.phrases.map(function (p) { return '<span class="imp-phrase-chip">' + esc(p) + '</span>'; }).join('') + '</div>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    if (suggestions.length) {
+      html += '<div class="imp-section"><h3 class="imp-heading">✍️ Rewrite Suggestions (' + suggestions.length + ')</h3>';
+      suggestions.forEach(function (sug) {
+        var improved = sug.original.replace(new RegExp(sug.phrase, 'i'), sug.replacement);
+        html += '<div class="imp-sug">' +
+          '<div class="imp-sug-row imp-sug-from"><span class="imp-sug-label">Original</span><span class="imp-sug-txt weak">' + esc(sug.original) + '</span></div>' +
+          '<div class="imp-sug-row imp-sug-to"><span class="imp-sug-label">Improved</span><span class="imp-sug-txt strong">' + esc(improved) + '</span></div>' +
+          '<div class="imp-sug-src">From: ' + esc(sug.source) + '</div>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+
+    html += '<div class="imp-section"><h3 class="imp-heading">⚡ Power Verbs to Strengthen Your Bullets</h3>' +
+      '<div class="imp-verbs">' + POWER_VERBS.slice(0, 24).map(function (v) { return '<span class="imp-verb">' + v + '</span>'; }).join('') + '</div></div>';
+
+    el.innerHTML = html;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+   *  FEATURE 5 — RESUME DNA REPORT
+   * ══════════════════════════════════════════════════════════════ */
+  var _dnaChart = null;
+
+  function initDNA() {
+    var btn = $('btnGenerateDNA');
+    if (btn) btn.addEventListener('click', renderDNAReport);
+  }
+
+  function calcDNAScores() {
+    var skillBreadth = Math.min(100, state.skills.length * 10);
+
+    var expScore = 0;
+    state.experience.forEach(function (e) {
+      expScore += 20;
+      if (e.description) expScore += Math.min(20, e.description.split('\n').filter(Boolean).length * 4);
+    });
+    var experienceDepth = Math.min(100, expScore);
+
+    var totalB = 0, metricB = 0;
+    state.experience.forEach(function (e) {
+      if (!e.description) return;
+      var bullets = e.description.split('\n').filter(Boolean);
+      totalB += bullets.length;
+      bullets.forEach(function (b) { if (/\d/.test(b)) metricB++; });
+    });
+    var impactScore = totalB > 0 ? Math.round((metricB / totalB) * 100) : 0;
+
+    var uniqueWords = {};
+    getKeywords(getResumeText()).forEach(function (w) { uniqueWords[w] = true; });
+    var keywordDensity = Math.min(100, Object.keys(uniqueWords).length * 2);
+
+    var comp = 0;
+    var p = state.personal;
+    if (p.name) comp += 10; if (p.email) comp += 5; if (p.phone) comp += 5;
+    if (state.summary && state.summary.length > 60) comp += 20;
+    if (state.experience.length >= 2) comp += 25;
+    if (state.education.length) comp += 15;
+    if (state.skills.length >= 5) comp += 15;
+    if (state.projects.length) comp += 5;
+    var completeness = Math.min(100, comp);
+
+    return { skillBreadth: skillBreadth, experienceDepth: experienceDepth, impactScore: impactScore, keywordDensity: keywordDensity, completeness: completeness };
+  }
+
+  function renderDNAReport() {
+    var scores = calcDNAScores();
+    var dims = [
+      { key: 'skillBreadth',    label: 'Skill Breadth',    icon: '⚡' },
+      { key: 'experienceDepth', label: 'Experience Depth', icon: '💼' },
+      { key: 'impactScore',     label: 'Impact Score',     icon: '🎯' },
+      { key: 'keywordDensity',  label: 'Keyword Density',  icon: '📝' },
+      { key: 'completeness',    label: 'Completeness',     icon: '✅' }
+    ];
+    var overall = Math.round((scores.skillBreadth + scores.experienceDepth + scores.impactScore + scores.keywordDensity + scores.completeness) / 5);
+
+    var html = '<div class="dna-overall"><div class="dna-overall-num">' + overall + '</div><div class="dna-overall-lbl">Overall DNA Score</div></div><div class="dna-dims">';
+    dims.forEach(function (d) {
+      var v = scores[d.key];
+      var cls = v >= 75 ? 'great' : v >= 50 ? 'good' : v >= 25 ? 'ok' : 'weak';
+      html += '<div class="dna-dim">' +
+        '<div class="dna-dim-hd"><span>' + d.icon + ' ' + d.label + '</span><span class="dna-dim-val ' + cls + '">' + v + '</span></div>' +
+        '<div class="dna-bar-track"><div class="dna-bar-fill ' + cls + '" style="width:' + v + '%"></div></div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    var breakdown = $('dnaBreakdown');
+    if (breakdown) breakdown.innerHTML = html;
+
+    renderDNAChart(scores);
+  }
+
+  function renderDNAChart(scores) {
+    if (typeof Chart === 'undefined') return;
+    var canvas = $('dnaRadarChart');
+    if (!canvas) return;
+    if (_dnaChart) { _dnaChart.destroy(); _dnaChart = null; }
+    var accent = state.accentColor || '#6366f1';
+    var ctx = canvas.getContext('2d');
+    _dnaChart = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: ['Skill Breadth', 'Exp. Depth', 'Impact', 'Keywords', 'Complete'],
+        datasets: [{
+          label: 'Resume DNA',
+          data: [scores.skillBreadth, scores.experienceDepth, scores.impactScore, scores.keywordDensity, scores.completeness],
+          backgroundColor: accent.replace(/^#/, '') !== accent ? hexToRgba(accent, 0.2) : 'rgba(99,102,241,0.2)',
+          borderColor: accent,
+          borderWidth: 2,
+          pointBackgroundColor: accent,
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: accent
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: { min: 0, max: 100, stepSize: 25,
+            ticks: { color: '#94a3b8', backdropColor: 'transparent' },
+            pointLabels: { color: '#f1f5f9', font: { size: 11 } },
+            grid: { color: '#334155' },
+            angleLines: { color: '#334155' }
+          }
+        },
+        plugins: { legend: { labels: { color: '#f1f5f9' } } }
+      }
+    });
+  }
+
+  function hexToRgba(hex, alpha) {
+    var r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+   *  FEATURE 7 — INTERVIEW PROBABILITY PREDICTOR
+   * ══════════════════════════════════════════════════════════════ */
+  function initPredictor() {
+    var btn = $('btnPredict');
+    if (btn) btn.addEventListener('click', calcProbability);
+  }
+
+  function calcProbability() {
+    var atsScore = (typeof window._atsScore === 'number') ? window._atsScore : 50;
+    var dna = calcDNAScores();
+    var pctEl = $('strengthPct');
+    var strength = pctEl ? (parseInt(pctEl.textContent, 10) || 0) : 0;
+
+    var prob = Math.round(atsScore * 0.4 + dna.completeness * 0.3 + strength * 0.3);
+    prob = Math.min(Math.max(prob, 5), 95);
+
+    var band = prob >= 70 ? { label: 'Strong', cls: 'great', icon: '🔥' } :
+               prob >= 45 ? { label: 'Moderate', cls: 'good', icon: '👍' } :
+                            { label: 'Low', cls: 'weak', icon: '📈' };
+
+    var factors = [
+      { label: 'ATS Keyword Match',   score: atsScore,       weight: '40%' },
+      { label: 'Resume Completeness', score: dna.completeness, weight: '30%' },
+      { label: 'Resume Strength',     score: strength,         weight: '30%' }
+    ];
+
+    var html =
+      '<div class="pred-gauge-wrap">' +
+        '<div class="pred-gauge">' +
+          '<svg viewBox="0 0 200 110" class="pred-gauge-svg">' +
+            '<path d="M10,100 A90,90 0 0,1 190,100" fill="none" stroke="#1e293b" stroke-width="18" stroke-linecap="round"/>' +
+            '<path d="M10,100 A90,90 0 0,1 190,100" fill="none" stroke="' + (band.cls === 'great' ? '#10b981' : band.cls === 'good' ? '#f59e0b' : '#f43f5e') + '" stroke-width="18" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="' + Math.round(283 * (1 - prob / 100)) + '"/>' +
+          '</svg>' +
+          '<div class="pred-gauge-center">' +
+            '<div class="pred-prob-num ' + band.cls + '">' + prob + '%</div>' +
+            '<div class="pred-prob-lbl">Chance</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pred-band-tag ' + band.cls + '">' + band.icon + ' ' + band.label + ' Probability</div>' +
+      '</div>' +
+      '<div class="pred-factors">' +
+        '<h4 class="pred-factors-hd">Score Breakdown</h4>';
+    factors.forEach(function (f) {
+      var cls = f.score >= 70 ? 'great' : f.score >= 45 ? 'good' : 'weak';
+      html += '<div class="pred-factor">' +
+        '<div class="pred-factor-hd"><span>' + f.label + '</span><span class="pred-factor-meta">' + f.score + '/100 <em>(' + f.weight + ')</em></span></div>' +
+        '<div class="pred-factor-track"><div class="pred-factor-fill ' + cls + '" style="width:' + f.score + '%"></div></div>' +
+      '</div>';
+    });
+    html += '</div><div class="pred-tip">💡 Run the ATS Calculator with a job description to improve accuracy.</div>';
+
+    $('predictorResults').innerHTML = html;
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+   *  FEATURE 8 — VOICE INTERVIEW ANALYZER
+   * ══════════════════════════════════════════════════════════════ */
+  var _recognition   = null;
+  var _voiceStart    = 0;
+  var _voiceText     = '';
+  var _voiceActive   = false;
+  var FILLERS = ['um','uh','like','you know','basically','literally','actually','so','right','okay','well'];
+
+  function initVoice() {
+    var btn = $('btnVoiceRecord');
+    if (!btn) return;
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      var st = $('voiceStatus');
+      if (st) st.textContent = '❌ Speech Recognition is not supported. Please use Chrome or Edge.';
+      btn.disabled = true;
+      return;
+    }
+    btn.addEventListener('click', function () {
+      if (_voiceActive) { stopVoice(); } else { startVoice(); }
+    });
+  }
+
+  function startVoice() {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    _recognition = new SR();
+    _recognition.continuous = true;
+    _recognition.interimResults = true;
+    _recognition.lang = 'en-US';
+    _voiceText = '';
+    _voiceStart = Date.now();
+    _voiceActive = true;
+
+    var btn = $('btnVoiceRecord');
+    var status = $('voiceStatus');
+    var transcript = $('voiceTranscript');
+    if (btn) { btn.textContent = '⏹ Stop Recording'; btn.classList.add('voice-recording'); }
+    if (status) status.textContent = '🎙 Recording… speak now!';
+    if (transcript) transcript.textContent = '';
+
+    _recognition.onresult = function (e) {
+      var finalChunk = '';
+      var interim = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) { finalChunk += e.results[i][0].transcript; }
+        else { interim += e.results[i][0].transcript; }
+      }
+      _voiceText += finalChunk;
+      if (transcript) {
+        transcript.innerHTML =
+          '<span class="vt-final">' + esc(_voiceText) + '</span>' +
+          (interim ? '<span class="vt-interim"> ' + esc(interim) + '</span>' : '');
+      }
+    };
+    _recognition.onerror = function (e) {
+      var st = $('voiceStatus');
+      if (st) st.textContent = '❌ Error: ' + e.error;
+      stopVoice();
+    };
+    _recognition.onend = function () { if (_voiceActive) _recognition.start(); };
+    _recognition.start();
+  }
+
+  function stopVoice() {
+    _voiceActive = false;
+    if (_recognition) { _recognition.stop(); _recognition = null; }
+    var btn = $('btnVoiceRecord');
+    var status = $('voiceStatus');
+    if (btn) { btn.textContent = '🎙 Start Recording'; btn.classList.remove('voice-recording'); }
+    if (status) status.textContent = '✅ Stopped. Analyzing…';
+    analyzeVoice();
+  }
+
+  function analyzeVoice() {
+    var el = $('voiceResults');
+    if (!el) return;
+    if (!_voiceText.trim()) {
+      el.innerHTML = '<p class="rc-tool-hint">No speech detected. Record for at least 10 seconds.</p>';
+      return;
+    }
+    var dur = (Date.now() - _voiceStart) / 1000;
+    var words = _voiceText.trim().split(/\s+/).filter(Boolean);
+    var wpm = dur > 0 ? Math.round((words.length / dur) * 60) : 0;
+
+    var fillerCount = 0;
+    var fillerBreakdown = {};
+    var lowerText = _voiceText.toLowerCase();
+    FILLERS.forEach(function (f) {
+      var re = new RegExp('\\b' + f + '\\b', 'gi');
+      var m = lowerText.match(re);
+      if (m) { fillerCount += m.length; fillerBreakdown[f] = m.length; }
+    });
+
+    var sentences = _voiceText.split(/[.!?]+/).filter(function (s) { return s.trim().length > 0; });
+
+    var fluencyScore = Math.max(0, Math.min(100, 100 - fillerCount * 8));
+    var speedScore = (wpm >= 120 && wpm <= 160) ? 100 : (wpm >= 100 && wpm <= 180) ? 75 : (wpm >= 80 && wpm <= 200) ? 50 : 25;
+    var confidenceScore = Math.min(100, Math.max(0,
+      (sentences.length >= 3 ? 35 : 15) + (fluencyScore >= 70 ? 35 : 20) + (speedScore >= 70 ? 30 : 15)
+    ));
+    var speedLabel = wpm < 80 ? 'Too Slow' : wpm < 120 ? 'Slow' : wpm <= 160 ? '✓ Ideal' : wpm <= 200 ? 'Fast' : 'Too Fast';
+
+    el.innerHTML =
+      '<div class="voice-scores">' +
+        voiceCard('Fluency', fluencyScore, fillerCount + ' filler words') +
+        voiceCard('Speed', speedScore, wpm + ' WPM — ' + speedLabel) +
+        voiceCard('Confidence', confidenceScore, 'Pace & clarity') +
+      '</div>' +
+      '<div class="voice-stats">' +
+        vStat(words.length, 'Words') + vStat(Math.round(dur) + 's', 'Duration') +
+        vStat(wpm, 'WPM') + vStat(fillerCount, 'Fillers') +
+      '</div>' +
+      (fillerCount > 0 ?
+        '<div class="voice-filler-section"><h4>Filler Word Breakdown</h4><div class="voice-filler-chips">' +
+        Object.keys(fillerBreakdown).map(function (f) {
+          return '<span class="voice-filler-chip">"' + f + '" &times;' + fillerBreakdown[f] + '</span>';
+        }).join('') + '</div></div>' : '') +
+      '<div class="voice-tip">💡 Ideal interview pace: 120–160 WPM. Aim for fewer than 1 filler word per 20 words.</div>';
+  }
+
+  function voiceCard(label, score, sub) {
+    var cls = score >= 75 ? 'great' : score >= 50 ? 'good' : score >= 25 ? 'ok' : 'weak';
+    return '<div class="voice-card">' +
+      '<div class="voice-card-num ' + cls + '">' + score + '</div>' +
+      '<div class="voice-card-label">' + label + '</div>' +
+      '<div class="voice-card-sub">' + esc(sub) + '</div>' +
+    '</div>';
+  }
+
+  function vStat(val, label) {
+    return '<div class="voice-stat"><div class="voice-stat-num">' + val + '</div><div class="voice-stat-lbl">' + label + '</div></div>';
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+   *  FEATURE 9 — AUTO PORTFOLIO GENERATOR
+   * ══════════════════════════════════════════════════════════════ */
+  function initPortfolio() {
+    var dl = $('btnDownloadPortfolio');
+    if (dl) dl.addEventListener('click', downloadPortfolio);
+    var pv = $('btnPreviewPortfolio');
+    if (pv) {
+      pv.addEventListener('click', function () {
+        var blob = new Blob([buildPortfolioHTML()], { type: 'text/html' });
+        var url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+      });
+    }
+  }
+
+  function downloadPortfolio() {
+    var html = buildPortfolioHTML();
+    var blob = new Blob([html], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = ((state.personal.name || 'portfolio').replace(/\s+/g, '-').toLowerCase()) + '-portfolio.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  }
+
+  function buildPortfolioHTML() {
+    var p = state.personal;
+    var accent = state.accentColor || '#6366f1';
+
+    var skillsH = state.skills.map(function (s) { return '<span class="sk">' + s.name + '</span>'; }).join('');
+
+    var expH = state.experience.map(function (e) {
+      var dates = e.current ? (e.startDate || '') + ' — Present' : (e.startDate || '') + (e.endDate ? ' — ' + e.endDate : '');
+      var bullets = e.description
+        ? e.description.split('\n').filter(Boolean).map(function (l) { return '<li>' + l.replace(/^[\s•\-*]+/, '').trim() + '</li>'; }).join('')
+        : '';
+      return '<div class="ei"><div class="ei-hd"><strong>' + (e.jobTitle || '') + '</strong><span class="ei-d">' + dates + '</span></div>' +
+        (e.company ? '<div class="ei-co">' + e.company + (e.location ? ', ' + e.location : '') + '</div>' : '') +
+        (bullets ? '<ul>' + bullets + '</ul>' : '') + '</div>';
+    }).join('');
+
+    var projH = state.projects.map(function (pr) {
+      return '<div class="pc"><div class="pc-n">' + (pr.name || '') + '</div>' +
+        (pr.techStack ? '<div class="pc-s">' + pr.techStack + '</div>' : '') +
+        (pr.description ? '<p>' + pr.description + '</p>' : '') +
+        (pr.url ? '<a href="' + pr.url + '" target="_blank" rel="noopener">🔗 View Project</a>' : '') + '</div>';
+    }).join('');
+
+    var eduH = state.education.map(function (e) {
+      return '<div class="edu"><strong>' + (e.degree || '') + '</strong>' +
+        (e.institution ? ' — ' + e.institution : '') +
+        (e.year ? ' <span class="ey">(' + e.year + ')</span>' : '') + '</div>';
+    }).join('');
+
+    var certH = state.certifications.map(function (c) {
+      return '<div class="cert"><strong>' + (c.name || '') + '</strong>' +
+        (c.issuer ? ' · ' + c.issuer : '') + (c.year ? ' · ' + c.year : '') + '</div>';
+    }).join('');
+
+    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>' + (p.name || 'Portfolio') + '</title>\n' +
+      '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">\n' +
+      '<style>\n:root{--a:' + accent + '}\n' +
+      '*{box-sizing:border-box;margin:0;padding:0}\nbody{font-family:Inter,sans-serif;background:#0f172a;color:#e2e8f0;line-height:1.6}\n' +
+      '.hero{background:linear-gradient(135deg,var(--a) 0%,#0f172a 70%);padding:80px 24px;text-align:center}\n' +
+      '.hn{font-size:clamp(2rem,5vw,3.2rem);font-weight:700;color:#fff;margin-bottom:8px}\n' +
+      '.ht{font-size:1.1rem;color:rgba(255,255,255,.8);margin-bottom:20px}\n' +
+      '.hc{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}\n' +
+      '.hc a{color:rgba(255,255,255,.7);text-decoration:none;font-size:.9rem}\n.hc a:hover{color:#fff}\n' +
+      '.wrap{max-width:880px;margin:0 auto;padding:48px 24px}\n.sec{margin-bottom:52px}\n' +
+      '.sec-t{font-size:1.3rem;font-weight:700;color:var(--a);border-bottom:2px solid var(--a);padding-bottom:8px;margin-bottom:22px}\n' +
+      '.sk{display:inline-block;padding:5px 13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;font-size:.85rem;margin:3px}\n' +
+      '.ei{padding:14px 0;border-bottom:1px solid #1e293b}\n.ei-hd{display:flex;justify-content:space-between;flex-wrap:wrap;margin-bottom:4px}\n' +
+      '.ei-hd strong{color:#f1f5f9}\n.ei-d{font-size:.85rem;color:#64748b}\n.ei-co{font-size:.9rem;color:#94a3b8;margin-bottom:8px}\n' +
+      '.ei ul{padding-left:18px;color:#cbd5e1;font-size:.9rem}\n.ei li{margin-bottom:4px}\n' +
+      '.pc{background:#1e293b;border-radius:10px;padding:18px;margin-bottom:14px}\n' +
+      '.pc-n{font-size:1.05rem;font-weight:600;color:var(--a);margin-bottom:5px}\n' +
+      '.pc-s{font-size:.8rem;color:#64748b;margin-bottom:7px}\n.pc p{font-size:.9rem;color:#cbd5e1}\n' +
+      '.pc a{display:inline-block;margin-top:9px;color:var(--a);font-size:.9rem;text-decoration:none}\n' +
+      '.edu{padding:10px 0;border-bottom:1px solid #1e293b;color:#e2e8f0}\n.ey{color:#64748b;font-size:.9rem}\n' +
+      '.cert{padding:10px 0;border-bottom:1px solid #1e293b;color:#e2e8f0}\n' +
+      '.footer{text-align:center;padding:28px;color:#475569;font-size:.85rem;border-top:1px solid #1e293b}\n' +
+      '.footer a{color:var(--a);text-decoration:none}\n' +
+      '</style>\n</head>\n<body>\n' +
+      '<div class="hero">' +
+        '<h1 class="hn">' + (p.name || 'My Portfolio') + '</h1>' +
+        (p.jobTitle ? '<div class="ht">' + p.jobTitle + '</div>' : '') +
+        '<div class="hc">' +
+          (p.email    ? '<a href="mailto:' + p.email    + '">' + p.email    + '</a>' : '') +
+          (p.phone    ? '<a href="tel:'    + p.phone    + '">' + p.phone    + '</a>' : '') +
+          (p.linkedin ? '<a href="https://' + p.linkedin + '" target="_blank" rel="noopener">' + p.linkedin + '</a>' : '') +
+          (p.website  ? '<a href="https://' + p.website  + '" target="_blank" rel="noopener">' + p.website  + '</a>' : '') +
+        '</div>' +
+      '</div>\n' +
+      '<div class="wrap">' +
+        (state.summary ? '<div class="sec"><h2 class="sec-t">About Me</h2><p>' + state.summary + '</p></div>' : '') +
+        (skillsH ? '<div class="sec"><h2 class="sec-t">Skills</h2><div>' + skillsH + '</div></div>' : '') +
+        (expH   ? '<div class="sec"><h2 class="sec-t">Experience</h2>' + expH + '</div>' : '') +
+        (projH  ? '<div class="sec"><h2 class="sec-t">Projects</h2>' + projH + '</div>' : '') +
+        (eduH   ? '<div class="sec"><h2 class="sec-t">Education</h2>' + eduH + '</div>' : '') +
+        (certH  ? '<div class="sec"><h2 class="sec-t">Certifications</h2>' + certH + '</div>' : '') +
+      '</div>\n' +
+      '<div class="footer">Built with <a href="#">ResumeCraft</a> &mdash; ' + new Date().getFullYear() + '</div>\n' +
+      '</body>\n</html>';
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+   *  FEATURE 10 — SKILL GAP DETECTOR
+   * ══════════════════════════════════════════════════════════════ */
+  var SKILL_DB = {
+    'Frontend Developer': {
+      skills: ['HTML','CSS','JavaScript','React','TypeScript','Git','REST API','Tailwind CSS','Testing','Webpack'],
+      resources: { 'React':'https://react.dev/', 'TypeScript':'https://www.typescriptlang.org/docs/', 'Tailwind CSS':'https://tailwindcss.com/docs', 'Testing':'https://testing-library.com/', 'Webpack':'https://webpack.js.org/guides/' }
+    },
+    'Backend Developer': {
+      skills: ['Node.js','Python','SQL','MongoDB','REST API','Docker','Git','Linux','Authentication','Redis'],
+      resources: { 'Docker':'https://docs.docker.com/', 'MongoDB':'https://www.mongodb.com/docs/', 'Python':'https://docs.python.org/3/', 'Redis':'https://redis.io/docs/' }
+    },
+    'Full Stack Developer': {
+      skills: ['JavaScript','TypeScript','React','Node.js','SQL','MongoDB','Docker','Git','REST API','CI/CD'],
+      resources: { 'TypeScript':'https://www.typescriptlang.org/docs/', 'Docker':'https://docs.docker.com/', 'CI/CD':'https://docs.github.com/en/actions' }
+    },
+    'Data Scientist': {
+      skills: ['Python','Machine Learning','Statistics','Pandas','NumPy','SQL','TensorFlow','Data Visualization','NLP','Jupyter'],
+      resources: { 'Machine Learning':'https://www.coursera.org/learn/machine-learning', 'TensorFlow':'https://www.tensorflow.org/tutorials', 'NLP':'https://www.nltk.org/', 'Pandas':'https://pandas.pydata.org/docs/' }
+    },
+    'DevOps Engineer': {
+      skills: ['Docker','Kubernetes','CI/CD','Linux','Terraform','AWS','Python','Git','Monitoring','Security'],
+      resources: { 'Kubernetes':'https://kubernetes.io/docs/', 'Terraform':'https://developer.hashicorp.com/terraform/docs', 'AWS':'https://aws.amazon.com/training/', 'Monitoring':'https://prometheus.io/docs/' }
+    },
+    'UI/UX Designer': {
+      skills: ['Figma','User Research','Prototyping','Wireframing','Design Systems','CSS','Accessibility','HTML','Typography','Adobe XD'],
+      resources: { 'Figma':'https://www.figma.com/resources/learn-design/', 'Accessibility':'https://www.w3.org/WAI/WCAG21/quickref/', 'Design Systems':'https://designsystemsrepo.com/' }
+    },
+    'Mobile Developer': {
+      skills: ['React Native','Swift','Kotlin','Flutter','REST API','Git','UI Design','Authentication','Push Notifications','Testing'],
+      resources: { 'React Native':'https://reactnative.dev/docs/', 'Flutter':'https://docs.flutter.dev/', 'Kotlin':'https://kotlinlang.org/docs/', 'Swift':'https://www.swift.org/documentation/' }
+    },
+    'Cloud Architect': {
+      skills: ['AWS','Azure','GCP','Docker','Kubernetes','Terraform','Networking','Security','Cost Optimization','Monitoring'],
+      resources: { 'AWS':'https://aws.amazon.com/training/', 'Azure':'https://learn.microsoft.com/azure/', 'GCP':'https://cloud.google.com/training', 'Terraform':'https://developer.hashicorp.com/terraform/docs' }
+    }
+  };
+
+  function initSkillGap() {
+    var btn  = $('btnDetectGap');
+    var sel  = $('skillGapRole');
+    if (btn) btn.addEventListener('click', detectSkillGap);
+    if (sel) sel.addEventListener('change', detectSkillGap);
+  }
+
+  function detectSkillGap() {
+    var sel = $('skillGapRole');
+    if (!sel || !sel.value) return;
+    var role = sel.value;
+    var db = SKILL_DB[role];
+    if (!db) return;
+
+    var userSkills = state.skills.map(function (s) { return s.name.toLowerCase(); });
+    var hasSkills     = db.skills.filter(function (s) { return userSkills.some(function (u) { return u.indexOf(s.toLowerCase()) !== -1 || s.toLowerCase().indexOf(u) !== -1; }); });
+    var missingSkills = db.skills.filter(function (s) { return !userSkills.some(function (u) { return u.indexOf(s.toLowerCase()) !== -1 || s.toLowerCase().indexOf(u) !== -1; }); });
+    var pct = Math.round((hasSkills.length / db.skills.length) * 100);
+    var cls = pct >= 80 ? 'great' : pct >= 60 ? 'good' : pct >= 40 ? 'ok' : 'weak';
+
+    var html =
+      '<div class="sg-match">' +
+        '<div class="sg-pct ' + cls + '">' + pct + '%</div>' +
+        '<div class="sg-pct-lbl">Role Readiness for <strong>' + esc(role) + '</strong></div>' +
+      '</div>' +
+      '<div class="sg-cols">' +
+        '<div class="sg-col">' +
+          '<h4 class="sg-col-hd sg-has">✅ You Have (' + hasSkills.length + '/' + db.skills.length + ')</h4>' +
+          '<div class="sg-chips">' + hasSkills.map(function (s) { return '<span class="sg-chip sg-has-chip">' + esc(s) + '</span>'; }).join('') + '</div>' +
+        '</div>' +
+        '<div class="sg-col">' +
+          '<h4 class="sg-col-hd sg-miss">❌ To Learn (' + missingSkills.length + ')</h4>' +
+          '<div class="sg-chips">' + missingSkills.map(function (s) {
+            var link = db.resources && db.resources[s]
+              ? ' <a href="' + db.resources[s] + '" target="_blank" rel="noopener" class="sg-learn">Learn →</a>'
+              : '';
+            return '<span class="sg-chip sg-miss-chip">' + esc(s) + link + '</span>';
+          }).join('') + '</div>' +
+        '</div>' +
+      '</div>' +
+      (missingSkills.length
+        ? '<div class="sg-tip">💡 Focus on learning the ' + missingSkills.length + ' missing skill' + (missingSkills.length > 1 ? 's' : '') + ' to boost your role readiness.</div>'
+        : '<div class="sg-tip sg-tip-ok">🎉 You have all the core skills for this role!</div>');
+
+    $('skillGapResults').innerHTML = html;
   }
 
 }());

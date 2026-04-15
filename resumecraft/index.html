@@ -24,6 +24,14 @@
     <div class="rc-mode-tabs" id="modeTabs">
       <button class="rc-mode-tab active" data-mode="resume">📄 Resume</button>
       <button class="rc-mode-tab" data-mode="coverletter">✉️ Cover Letter</button>
+      <button class="rc-mode-tab" data-mode="parser">🔍 Parser</button>
+      <button class="rc-mode-tab" data-mode="ats">🎯 ATS</button>
+      <button class="rc-mode-tab" data-mode="improver">✍️ Improver</button>
+      <button class="rc-mode-tab" data-mode="dna">🧬 DNA</button>
+      <button class="rc-mode-tab" data-mode="predictor">📈 Predict</button>
+      <button class="rc-mode-tab" data-mode="voice">🎥 Voice</button>
+      <button class="rc-mode-tab" data-mode="portfolio">🌐 Portfolio</button>
+      <button class="rc-mode-tab" data-mode="skillgap">🧭 Skills</button>
     </div>
 
     <div class="rc-nav__controls">
@@ -166,6 +174,206 @@
 
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════
+       RESUME PARSER LAYOUT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="rc-tool-layout hidden" id="parserLayout">
+    <div class="rc-tool-scroll">
+      <div class="rc-tool-header">
+        <h1 class="rc-tool-title">🔍 Resume Parser</h1>
+        <p class="rc-tool-desc">Upload your existing resume to automatically extract and populate your resume fields. Supports <strong>.txt</strong> and <strong>.pdf</strong> files.</p>
+      </div>
+      <div class="rc-upload-zone" id="uploadZone">
+        <div class="rc-upload-icon">📄</div>
+        <div class="rc-upload-text">
+          <strong>Drop your resume here</strong><br>
+          <span>or click to browse — .txt or .pdf files supported</span>
+        </div>
+        <input type="file" id="resumeFile" accept=".txt,.pdf" style="display:none">
+        <button class="rc-btn-primary" id="btnUpload" type="button">📤 Choose File</button>
+      </div>
+      <div id="parserStatus" class="rc-parser-status hidden"></div>
+      <div id="parserPreview" class="rc-parser-preview hidden"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       ATS SCORE CALCULATOR + JD TAILORING LAYOUT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="rc-tool-layout hidden" id="atsLayout">
+    <div class="rc-tool-two-col">
+      <div class="rc-tool-left">
+        <div class="rc-tool-header">
+          <h1 class="rc-tool-title">🎯 ATS Score Calculator</h1>
+          <p class="rc-tool-desc">Paste a job description to see how well your resume matches ATS filters. Missing keywords can be auto-inserted into your Skills.</p>
+        </div>
+        <label class="rc-label" for="atsJD">Job Description</label>
+        <textarea class="rc-textarea ats-jd-ta" id="atsJD" rows="18" placeholder="Paste the full job description here…"></textarea>
+        <div class="ats-jd-foot">
+          <span id="atsJDCount" class="rc-char-count">0 chars</span>
+          <button class="rc-btn-primary" id="btnATSAnalyze" type="button">⚡ Analyze Match</button>
+        </div>
+      </div>
+      <div class="rc-tool-right">
+        <div id="atsResults" class="ats-results">
+          <p class="rc-tool-hint">Paste a job description on the left, then click Analyze.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       AI RESUME IMPROVER + WEAKNESS ANALYZER LAYOUT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="rc-tool-layout hidden" id="improverLayout">
+    <div class="rc-tool-scroll">
+      <div class="rc-tool-header">
+        <h1 class="rc-tool-title">✍️ AI Resume Improver</h1>
+        <p class="rc-tool-desc">Detects weak language, missing metrics, and generic content in your resume — with concrete rewrite suggestions and power verbs.</p>
+        <button class="rc-btn-primary" id="btnAnalyzeResume" type="button">🔍 Analyze My Resume</button>
+      </div>
+      <div id="improverResults" class="imp-results">
+        <p class="rc-tool-hint">Click "Analyze" to scan your resume for weaknesses and improvement opportunities.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       RESUME DNA REPORT LAYOUT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="rc-tool-layout hidden" id="dnaLayout">
+    <div class="rc-tool-scroll">
+      <div class="rc-tool-header">
+        <h1 class="rc-tool-title">🧬 Resume DNA Report</h1>
+        <p class="rc-tool-desc">A 5-dimension deep analysis of your resume: Skill Breadth, Experience Depth, Impact, Keyword Density, and Completeness.</p>
+        <button class="rc-btn-primary" id="btnGenerateDNA" type="button">🧬 Generate DNA Report</button>
+      </div>
+      <div class="dna-content">
+        <div class="dna-chart-wrap">
+          <canvas id="dnaRadarChart" width="320" height="320"></canvas>
+        </div>
+        <div id="dnaBreakdown" class="dna-breakdown">
+          <p class="rc-tool-hint">Click "Generate DNA Report" to see your resume analysis.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       INTERVIEW PROBABILITY PREDICTOR LAYOUT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="rc-tool-layout hidden" id="predictorLayout">
+    <div class="rc-tool-scroll">
+      <div class="rc-tool-header">
+        <h1 class="rc-tool-title">📈 Interview Probability Predictor</h1>
+        <p class="rc-tool-desc">Estimates your interview callback probability based on resume strength, ATS match score, and completeness.</p>
+        <div class="pred-note">💡 Run the <strong>ATS Calculator</strong> with a target job description first for a more accurate prediction.</div>
+        <button class="rc-btn-primary" id="btnPredict" type="button">📈 Predict My Chances</button>
+      </div>
+      <div id="predictorResults" class="pred-results">
+        <p class="rc-tool-hint">Click "Predict" to calculate your interview probability.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       VOICE INTERVIEW ANALYZER LAYOUT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="rc-tool-layout hidden" id="voiceLayout">
+    <div class="rc-tool-scroll">
+      <div class="rc-tool-header">
+        <h1 class="rc-tool-title">🎥 Voice Interview Analyzer</h1>
+        <p class="rc-tool-desc">Record yourself answering an interview question. Analyzes fluency (filler words), speaking speed, and confidence. Works in Chrome / Edge.</p>
+      </div>
+      <div class="voice-panel">
+        <div id="voiceStatus" class="voice-status">Click the button below and answer a practice interview question out loud.</div>
+        <button class="voice-record-btn" id="btnVoiceRecord" type="button">🎙 Start Recording</button>
+        <div id="voiceTranscript" class="voice-transcript"></div>
+      </div>
+      <div id="voiceResults" class="voice-results">
+        <p class="rc-tool-hint">Record for at least 10 seconds, then stop to see your analysis.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       AUTO PORTFOLIO GENERATOR LAYOUT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="rc-tool-layout hidden" id="portfolioLayout">
+    <div class="rc-tool-scroll">
+      <div class="rc-tool-header">
+        <h1 class="rc-tool-title">🌐 Auto Portfolio Generator</h1>
+        <p class="rc-tool-desc">Convert your resume into a beautiful self-contained HTML portfolio page — no build step, host it free on GitHub Pages.</p>
+      </div>
+      <div class="portfolio-panel">
+        <div class="portfolio-preview-card">
+          <div class="portfolio-preview-icon">🌐</div>
+          <h3>Your portfolio is ready to generate</h3>
+          <p>ResumeCraft converts your resume into a polished HTML file with your accent colour, all sections, and a responsive dark theme.</p>
+          <ul class="portfolio-features">
+            <li>✅ Single self-contained HTML file</li>
+            <li>✅ Dark theme with your accent color</li>
+            <li>✅ Mobile responsive</li>
+            <li>✅ Host free on GitHub Pages</li>
+            <li>✅ No server or build step needed</li>
+          </ul>
+        </div>
+        <div class="portfolio-actions">
+          <button class="rc-btn-primary" id="btnPreviewPortfolio" type="button">👁 Preview in New Tab</button>
+          <button class="rc-btn-secondary" id="btnDownloadPortfolio" type="button">⬇️ Download portfolio.html</button>
+        </div>
+        <div class="portfolio-hosting">
+          <strong>🚀 How to host on GitHub Pages (free)</strong>
+          <ol>
+            <li>Download the <code>portfolio.html</code> file</li>
+            <li>Create a GitHub repository named <code>yourname.github.io</code></li>
+            <li>Rename the file to <code>index.html</code> and upload it</li>
+            <li>Enable GitHub Pages in Settings → Pages → main branch</li>
+            <li>Your portfolio goes live at <code>yourname.github.io</code> 🎉</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SKILL GAP DETECTOR LAYOUT
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="rc-tool-layout hidden" id="skillGapLayout">
+    <div class="rc-tool-scroll">
+      <div class="rc-tool-header">
+        <h1 class="rc-tool-title">🧭 Skill Gap Detector</h1>
+        <p class="rc-tool-desc">Select your target role to see which skills you already have and which you need to learn — with free learning resources.</p>
+      </div>
+      <div class="sg-panel">
+        <div class="sg-role-row">
+          <div class="rc-field sg-role-field">
+            <label class="rc-label" for="skillGapRole">Target Role</label>
+            <select class="rc-select" id="skillGapRole">
+              <option value="">— Select a role —</option>
+              <option value="Frontend Developer">Frontend Developer</option>
+              <option value="Backend Developer">Backend Developer</option>
+              <option value="Full Stack Developer">Full Stack Developer</option>
+              <option value="Data Scientist">Data Scientist</option>
+              <option value="DevOps Engineer">DevOps Engineer</option>
+              <option value="UI/UX Designer">UI/UX Designer</option>
+              <option value="Mobile Developer">Mobile Developer</option>
+              <option value="Cloud Architect">Cloud Architect</option>
+            </select>
+          </div>
+          <button class="rc-btn-primary sg-detect-btn" id="btnDetectGap" type="button">🔍 Detect Skill Gaps</button>
+        </div>
+      </div>
+      <div id="skillGapResults" class="sg-results">
+        <p class="rc-tool-hint">Select a target role above to see your skill gaps.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
